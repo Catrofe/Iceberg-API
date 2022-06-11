@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "iceberg"
+version = "0.1.0"
+description = "API para um web app de uma sorveteria"
+authors = ["Catrofe <lord.rico10@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.78.0"
+uvicorn = "^0.17.6"
+pydantic = "^1.9.1"
+psycopg2 = "^2.9.3"
+SQLAlchemy = "^1.4.37"
+SQLAlchemy-Utils = "^0.38.2"
+requests = "^2.28.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.1.2"
+isort = "^5.10.1"
+black = "^22.3.0"
+flake8 = "^4.0.1"
+pre-commit = "^2.19.0"
+mypy = "^0.961"
+pytest-random-order = "^1.0.4"
+pytest-cov = "^3.0.0"
+sqlalchemy-stubs = "^0.4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,20 @@
+version: "3"
+services:
+
+  DBpostgres:
+    image: postgres:11
+    container_name: DBpostgres
+    restart: always
+    environment:
+      - POSTGRES_DB=DBpostgres
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+    ports:
+      - 5432:5432
+  docker-python:
+        build:
+            context: .
+        ports:
+        - 8000:5000
+        depends_on:
+        - DBpostgres
