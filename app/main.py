@@ -1,16 +1,30 @@
-from fastapi import FastAPI, HTTPException
-
 from dataclasses import dataclass
 
+from fastapi import FastAPI, HTTPException
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
 from app.database import build_engine, build_session_maker, setup_db
-from app.models import UserOutput, UserRegister, EmployeeOutput, EmployeeRegister, LoginUser, LoginUserOutput,LoginEmployeeOutput
-from app.user import create_user, create_employee, login_user, login_employee
-from app.dataclass import Error, SuccessCreateUser, SuccessCreateEmployee, SuccessLoginUser, SuccessLoginEmployee
+from app.dataclass import (
+    Error,
+    SuccessCreateEmployee,
+    SuccessCreateUser,
+    SuccessLoginEmployee,
+    SuccessLoginUser,
+)
+from app.models import (
+    EmployeeOutput,
+    EmployeeRegister,
+    LoginEmployeeOutput,
+    LoginUser,
+    LoginUserOutput,
+    UserOutput,
+    UserRegister,
+)
+from app.user import create_employee, create_user, login_employee, login_user
 
 app = FastAPI()
+
 
 @dataclass
 class ServerContext:
@@ -26,6 +40,7 @@ context = ServerContext(engine=engine, session_maker=build_session_maker(engine)
 def startup_event() -> None:
     setup_db(context.engine)
 
+
 @app.post("/register/user", status_code=201, response_model=UserOutput)
 def register_user(user: UserRegister) -> UserOutput:
     response = create_user(user, context.session_maker)
@@ -35,6 +50,7 @@ def register_user(user: UserRegister) -> UserOutput:
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
+
 
 @app.post("/register/employee", status_code=201, response_model=EmployeeOutput)
 def register_employee(user: EmployeeRegister) -> EmployeeOutput:
@@ -46,8 +62,9 @@ def register_employee(user: EmployeeRegister) -> EmployeeOutput:
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
 
+
 @app.post("/login/user", status_code=200, response_model=LoginUserOutput)
-def login(request: LoginUser)-> LoginUserOutput:
+def login(request: LoginUser) -> LoginUserOutput:
     response = login_user(request, context.session_maker)
 
     if isinstance(response, SuccessLoginUser):
@@ -56,12 +73,13 @@ def login(request: LoginUser)-> LoginUserOutput:
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
 
+
 @app.post("/login/employee", status_code=200, response_model=LoginEmployeeOutput)
-def login_backoffice(request: LoginUser)-> LoginEmployeeOutput:
+def login_backoffice(request: LoginUser) -> LoginEmployeeOutput:
     response = login_employee(request, context.session_maker)
 
     if isinstance(response, SuccessLoginEmployee):
-        return LoginUserOutput(login=response.login, message=response.message)
+        return LoginEmployeeOutput(login=response.login, message=response.message)
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)

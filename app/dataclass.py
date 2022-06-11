@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-
-from dataclasses import dataclass
 from typing import Literal
+
 
 @dataclass
 class Error:
@@ -9,20 +8,24 @@ class Error:
     message: str
     status_code: int
 
+
 @dataclass
 class SuccessCreateUser:
     id: int
     email: str
+
 
 @dataclass
 class SuccessCreateEmployee:
     id: int
     email: str
 
+
 @dataclass
 class SuccessLoginUser:
     login: str
     message: str
+
 
 @dataclass
 class SuccessLoginEmployee:
