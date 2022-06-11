@@ -84,7 +84,9 @@ def login_user(
         user_cpf = session.query(User.password).filter_by(cpf=login).one_or_none()
         user_number = session.query(User.password).filter_by(number=login).one_or_none()
 
-        password_deque: Deque[str] = deque()
+        print(type(user_number))
+
+        password_deque: Deque = deque()
         password_deque.append(user_email)
         password_deque.append(user_cpf)
         password_deque.append(user_number)
