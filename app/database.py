@@ -1,21 +1,35 @@
-from sqlalchemy import Boolean, Column, Integer, String, create_engine
-from sqlalchemy.engine import Engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
+# from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
 
-def build_engine(db_url: str) -> Engine:
-    return create_engine(db_url)
+# def build_engine(db_url: str) -> Engine:
+#     return create_async_engine(db_url)
 
 
-def build_session_maker(engine: Engine) -> sessionmaker:
-    return sessionmaker(bind=engine)
+# def build_session_maker(engine: Engine) -> sessionmaker:
+#     async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+#     return async_session
 
 
-def setup_db(engine: Engine) -> None:
-    Base.metadata.create_all(engine)
+# async def setup_db(engine: Engine) -> None:
+#     async with engine.begin() as conn:
+#         await conn.run_sync(Base.MetaData.create_all())
+
+ENGINE = create_async_engine(
+    "postgresql+asyncpg://root:root@localhost:5432/Iceberg", echo=True
+)
+
+ASYNC_SESSION = sessionmaker(ENGINE, expire_on_commit=False, class_=AsyncSession)
+
+
+async def async_main():
+    async with ENGINE.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 class User(Base):

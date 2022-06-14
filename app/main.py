@@ -4,7 +4,8 @@ from fastapi import FastAPI, HTTPException
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
-from app.database import build_engine, build_session_maker, setup_db
+# build_engine, build_session_maker, setup_db,
+from app.database import ASYNC_SESSION, ENGINE, async_main
 from app.dataclass import (
     Error,
     SuccessCreateEmployee,
@@ -32,18 +33,18 @@ class ServerContext:
     session_maker: sessionmaker
 
 
-engine = build_engine("postgresql+psycopg2://root:root@localhost:5432/Iceberg")
-context = ServerContext(engine=engine, session_maker=build_session_maker(engine))
+context = ServerContext(engine=ENGINE, session_maker=ASYNC_SESSION)
 
 
 @app.on_event("startup")
-def startup_event() -> None:
-    setup_db(context.engine)
+async def startup_event() -> None:
+    await async_main()
 
 
 @app.post("/register/user", status_code=201, response_model=UserOutput)
-def register_user(user: UserRegister) -> UserOutput:
-    response = create_user(user, context.session_maker)
+async def register_user(user: UserRegister) -> UserOutput:
+    print(context)
+    response = await create_user(user, context.session_maker)
 
     if isinstance(response, SuccessCreateUser):
         return UserOutput(id=response.id, email=response.email)
@@ -53,8 +54,8 @@ def register_user(user: UserRegister) -> UserOutput:
 
 
 @app.post("/register/employee", status_code=201, response_model=EmployeeOutput)
-def register_employee(user: EmployeeRegister) -> EmployeeOutput:
-    response = create_employee(user, context.session_maker)
+async def register_employee(user: EmployeeRegister) -> EmployeeOutput:
+    response = await create_employee(user, context.session_maker)
 
     if isinstance(response, SuccessCreateEmployee):
         return EmployeeOutput(id=response.id, email=response.email)
@@ -64,8 +65,8 @@ def register_employee(user: EmployeeRegister) -> EmployeeOutput:
 
 
 @app.post("/login/user", status_code=200, response_model=LoginUserOutput)
-def login(request: LoginUser) -> LoginUserOutput:
-    response = login_user(request, context.session_maker)
+async def login(request: LoginUser) -> LoginUserOutput:
+    response = await login_user(request, context.session_maker)
 
     if isinstance(response, SuccessLoginUser):
         return LoginUserOutput(login=response.login, message=response.message)
@@ -75,8 +76,8 @@ def login(request: LoginUser) -> LoginUserOutput:
 
 
 @app.post("/login/employee", status_code=200, response_model=LoginEmployeeOutput)
-def login_backoffice(request: LoginUser) -> LoginEmployeeOutput:
-    response = login_employee(request, context.session_maker)
+async def login_backoffice(request: LoginUser) -> LoginEmployeeOutput:
+    response = await login_employee(request, context.session_maker)
 
     if isinstance(response, SuccessLoginEmployee):
         return LoginEmployeeOutput(login=response.login, message=response.message)

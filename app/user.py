@@ -2,6 +2,7 @@ from collections import deque
 from typing import Deque
 
 import bcrypt
+from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Employee, User
@@ -15,10 +16,10 @@ from app.dataclass import (
 from app.models import EmployeeRegister, LoginUser, UserRegister
 
 
-def create_user(
+async def create_user(
     user: UserRegister, session_maker: sessionmaker
 ) -> SuccessCreateUser | Error:
-    if verify_email_already_exists(user.email, session_maker):
+    if await verify_email_already_exists(user.email, session_maker):
         return Error(reason="CONFLICT", message="EMAIL_ALREADY_EXISTS", status_code=409)
 
     try:
@@ -27,11 +28,11 @@ def create_user(
             email=user.email,
             cpf=user.cpf,
             number=user.number,
-            password=encrypt_password(user.password),
+            password=await encrypt_password(user.password),
         )
-        with session_maker() as session:
+        async with session_maker() as session:
             session.add(user_add)
-            session.commit()
+            await session.commit()
 
             return SuccessCreateUser(id=user_add.id, email=user_add.email)
 
@@ -39,10 +40,10 @@ def create_user(
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
 
 
-def create_employee(
+async def create_employee(
     user: EmployeeRegister, session_maker: sessionmaker
 ) -> SuccessCreateEmployee | Error:
-    if verify_email_alread_exists_to_employee(user.email, session_maker):
+    if await verify_email_alread_exists_to_employee(user.email, session_maker):
         return Error(reason="CONFLICT", message="EMAIL_ALREADY_EXISTS", status_code=409)
 
     if user.manager == user.attendant:
@@ -57,14 +58,14 @@ def create_employee(
             name=user.name,
             email=user.email,
             cpf=user.cpf,
-            password=encrypt_password(user.password),
+            password=await encrypt_password(user.password),
             manager=user.manager,
             attendant=user.attendant,
         )
 
-        with session_maker() as session:
+        async with session_maker() as session:
             session.add(employee_add)
-            session.commit()
+            await session.commit()
 
             return SuccessCreateEmployee(id=employee_add.id, email=employee_add.email)
 
@@ -72,29 +73,33 @@ def create_employee(
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
 
 
-def login_user(
+async def login_user(
     request: LoginUser, session_maker: sessionmaker
 ) -> SuccessLoginUser | Error:
     login = request.login
     password = str(request.password)
     password_input = password.encode("utf8")
 
-    with session_maker() as session:
-        user_email = session.query(User.password).filter_by(email=login).one_or_none()
-        user_cpf = session.query(User.password).filter_by(cpf=login).one_or_none()
-        user_number = session.query(User.password).filter_by(number=login).one_or_none()
+    async with session_maker() as session:
+        user_email = await session.execute(
+            select(User.password).where(User.email == login)
+        )
+        user_cpf = await session.execute(select(User.password).where(User.cpf == login))
+        user_number = await session.execute(
+            select(User.password).where(User.number == login)
+        )
 
         print(type(user_number))
 
-        password_deque: Deque = deque()
-        password_deque.append(user_email)
-        password_deque.append(user_cpf)
-        password_deque.append(user_number)
+        passwords: Deque = deque()
+        passwords.append(user_email.scalar())
+        passwords.append(user_cpf.scalar())
+        passwords.append(user_number.scalar())
 
-        for iten in password_deque:
+        for iten in passwords:
             try:
-                password_db = iten[0]
-                password_db = iten.password.encode("utf-8")
+                password_db = iten
+                password_db = password_db.encode("utf-8")
                 if bcrypt.checkpw(password_input, password_db):
                     return SuccessLoginUser(login=login, message="LOGIN_SUCCESSFUL")
             except Exception as exc:
@@ -106,7 +111,7 @@ def login_user(
         )
 
 
-def login_employee(
+async def login_employee(
     request: LoginUser, session_maker: sessionmaker
 ) -> SuccessLoginEmployee | Error:
 
@@ -114,22 +119,22 @@ def login_employee(
     password = str(request.password)
     password_input = password.encode("utf8")
 
-    with session_maker() as session:
-        employee_email = (
-            session.query(Employee.password).filter_by(email=login).one_or_none()
+    async with session_maker() as session:
+        employee_email = await (
+            session.execute(select(Employee.password).where(Employee.email == login))
         )
-        employee_cpf = (
-            session.query(Employee.password).filter_by(cpf=login).one_or_none()
+        employee_cpf = await (
+            session.execute(select(Employee.password).where(Employee.cpf == login))
         )
 
-        password_deque: Deque = deque()
-        password_deque.append(employee_email)
-        password_deque.append(employee_cpf)
+        passwords: list[str] = []
+        passwords.append(employee_email.scalar())
+        passwords.append(employee_cpf.scalar())
 
-        for iten in password_deque:
+        for iten in passwords:
             try:
-                password_db = iten[0]
-                password_db = iten.password.encode("utf-8")
+                password_db = iten
+                password_db = password_db.encode("utf-8")
                 if bcrypt.checkpw(password_input, password_db):
                     return SuccessLoginEmployee(login=login, message="LOGIN_SUCCESSFUL")
             except Exception:
@@ -140,17 +145,23 @@ def login_employee(
         )
 
 
-def verify_email_already_exists(email_user: str, session_maker: sessionmaker) -> bool:
-    with session_maker() as session:
-        return bool(session.query(User.email).filter_by(email=email_user).count())
-
-
-def verify_email_alread_exists_to_employee(
+async def verify_email_already_exists(
     email_user: str, session_maker: sessionmaker
 ) -> bool:
-    with session_maker() as session:
-        return bool(session.query(Employee.email).filter_by(email=email_user).count())
+    async with session_maker() as session:
+        user = await session.execute(select(User).where(User.email == email_user))
+        return bool(user.scalar())
 
 
-def encrypt_password(raw_password: str) -> str:
+async def verify_email_alread_exists_to_employee(
+    email_user: str, session_maker: sessionmaker
+) -> bool:
+    async with session_maker() as session:
+        employee = await session.execute(
+            select(Employee).where(Employee.email == email_user)
+        )
+        return bool(employee.scalar())
+
+
+async def encrypt_password(raw_password: str) -> str:
     return bcrypt.hashpw(raw_password.encode("utf8"), bcrypt.gensalt(8)).decode()
