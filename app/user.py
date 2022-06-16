@@ -1,7 +1,8 @@
-from collections import deque
-from typing import Deque
+import datetime
+from typing import Any, Dict, List
 
 import bcrypt
+import jwt
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
@@ -14,6 +15,8 @@ from app.dataclass import (
     SuccessLoginUser,
 )
 from app.models import EmployeeRegister, LoginUser, UserRegister
+
+KEY_TOKEN = "Apolo@ana@catrofe"
 
 
 async def create_user(
@@ -81,29 +84,29 @@ async def login_user(
     password_input = password.encode("utf8")
 
     async with session_maker() as session:
-        user_email = await session.execute(
-            select(User.password).where(User.email == login)
-        )
-        user_cpf = await session.execute(select(User.password).where(User.cpf == login))
-        user_number = await session.execute(
-            select(User.password).where(User.number == login)
-        )
+        user_email = await session.execute(select(User).where(User.email == login))
+        user_cpf = await session.execute(select(User).where(User.cpf == login))
+        user_number = await session.execute(select(User).where(User.number == login))
 
         print(type(user_number))
 
-        passwords: Deque = deque()
+        passwords: List[Any] = []
         passwords.append(user_email.scalar())
         passwords.append(user_cpf.scalar())
         passwords.append(user_number.scalar())
 
         for iten in passwords:
             try:
-                password_db = iten
-                password_db = password_db.encode("utf-8")
-                if bcrypt.checkpw(password_input, password_db):
-                    return SuccessLoginUser(login=login, message="LOGIN_SUCCESSFUL")
-            except Exception as exc:
-                print(exc)
+                password_db = iten.password
+                if isinstance(password_db, str):
+                    password_db = password_db.encode("utf-8")
+                    if bcrypt.checkpw(password_input, password_db):
+                        token = await encode_token_jwt(iten.id, iten.email, "user")
+                        print(token)
+                        return SuccessLoginUser(
+                            login=login, message="LOGIN_SUCCESSFUL", token=token
+                        )
+            except Exception:
                 continue
 
         return Error(
@@ -121,28 +124,52 @@ async def login_employee(
 
     async with session_maker() as session:
         employee_email = await (
-            session.execute(select(Employee.password).where(Employee.email == login))
+            session.execute(select(Employee).where(Employee.email == login))
         )
         employee_cpf = await (
-            session.execute(select(Employee.password).where(Employee.cpf == login))
+            session.execute(select(Employee).where(Employee.cpf == login))
         )
 
-        passwords: list[str] = []
+        passwords: List[Any] = []
         passwords.append(employee_email.scalar())
         passwords.append(employee_cpf.scalar())
 
         for iten in passwords:
             try:
-                password_db = iten
-                password_db = password_db.encode("utf-8")
-                if bcrypt.checkpw(password_input, password_db):
-                    return SuccessLoginEmployee(login=login, message="LOGIN_SUCCESSFUL")
-            except Exception:
+                password_db = iten.password
+                if isinstance(password_db, str):
+                    password_db = password_db.encode("utf-8")
+                    if bcrypt.checkpw(password_input, password_db):
+                        token = await encode_token_jwt(iten.id, iten.email, "employee")
+                        return SuccessLoginEmployee(
+                            login=login, message="LOGIN_SUCCESSFUL", token=token
+                        )
+            except Exception as exc:
+                print("exc ", exc)
                 continue
 
         return Error(
             reason="BAD_REQUEST", message="LOGIN_OR_PASSWORD_INCORRECT", status_code=400
         )
+
+
+async def encode_token_jwt(id: int, email: str, type: str) -> str:
+    return jwt.encode(
+        {
+            "id": id,
+            "email": email,
+            "type": type,
+            "exp": datetime.datetime.now() + datetime.timedelta(hours=+2),
+        },
+        KEY_TOKEN,
+        algorithm="HS256",
+    )
+
+
+async def decode_token_jwt(token: str) -> Dict[str, Any]:
+    return jwt.decode(
+        token, KEY_TOKEN, leeway=datetime.timedelta(hours=+2), algorithm="HS256"
+    )
 
 
 async def verify_email_already_exists(

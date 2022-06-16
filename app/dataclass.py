@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Optional
 
 
 @dataclass
@@ -11,23 +11,25 @@ class Error:
 
 @dataclass
 class SuccessCreateUser:
-    id: int
-    email: str
+    id: Optional[int]
+    email: Optional[str]
 
 
 @dataclass
 class SuccessCreateEmployee:
-    id: int
-    email: str
+    id: Optional[int]
+    email: Optional[str]
 
 
 @dataclass
 class SuccessLoginUser:
     login: str
     message: str
+    token: str
 
 
 @dataclass
 class SuccessLoginEmployee:
     login: str
     message: str
+    token: str

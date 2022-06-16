@@ -27,7 +27,7 @@ ENGINE = create_async_engine(
 ASYNC_SESSION = sessionmaker(ENGINE, expire_on_commit=False, class_=AsyncSession)
 
 
-async def async_main():
+async def async_main() -> None:
     async with ENGINE.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

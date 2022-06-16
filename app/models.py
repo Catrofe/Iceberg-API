@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 _email_field = Field(
@@ -16,8 +18,8 @@ class UserRegister(BaseModel):
 
 
 class UserOutput(BaseModel):
-    id: int
-    email: str
+    id: Optional[int]
+    email: Optional[str]
 
 
 class EmployeeRegister(BaseModel):
@@ -30,8 +32,8 @@ class EmployeeRegister(BaseModel):
 
 
 class EmployeeOutput(BaseModel):
-    id: int
-    email: str
+    id: Optional[int]
+    email: Optional[str]
 
 
 class LoginUser(BaseModel):
@@ -42,8 +44,10 @@ class LoginUser(BaseModel):
 class LoginUserOutput(BaseModel):
     login: str
     message: str
+    token: str
 
 
 class LoginEmployeeOutput(BaseModel):
     login: str
     message: str
+    token: str

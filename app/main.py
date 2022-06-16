@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from fastapi import FastAPI, HTTPException
-from sqlalchemy.engine import Engine
+from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import sessionmaker
 
 # build_engine, build_session_maker, setup_db,
@@ -29,7 +29,7 @@ app = FastAPI()
 
 @dataclass
 class ServerContext:
-    engine: Engine
+    engine: AsyncEngine
     session_maker: sessionmaker
 
 
@@ -69,7 +69,9 @@ async def login(request: LoginUser) -> LoginUserOutput:
     response = await login_user(request, context.session_maker)
 
     if isinstance(response, SuccessLoginUser):
-        return LoginUserOutput(login=response.login, message=response.message)
+        return LoginUserOutput(
+            login=response.login, message=response.message, token=response.token
+        )
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
@@ -80,7 +82,9 @@ async def login_backoffice(request: LoginUser) -> LoginEmployeeOutput:
     response = await login_employee(request, context.session_maker)
 
     if isinstance(response, SuccessLoginEmployee):
-        return LoginEmployeeOutput(login=response.login, message=response.message)
+        return LoginEmployeeOutput(
+            login=response.login, message=response.message, token=response.token
+        )
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
