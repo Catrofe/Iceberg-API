@@ -51,3 +51,29 @@ class LoginEmployeeOutput(BaseModel):
     login: str
     message: str
     token: str
+
+
+class UpdateEmployeeOutput(BaseModel):
+    login: str
+    message: str
+    token: str
+
+
+class SearchPasswordInput(BaseModel):
+    cpf: str
+    email: str
+
+
+class SearchPasswordOutPut(BaseModel):
+    cpf: str
+    token: str
+
+
+class ChagedPasswordInput(BaseModel):
+    password: str
+    token: str
+
+
+class ChagedPasswordOutput(BaseModel):
+    id: int
+    message: str

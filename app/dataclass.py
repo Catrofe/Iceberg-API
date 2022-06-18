@@ -3,6 +3,12 @@ from typing import Literal, Optional
 
 
 @dataclass
+class UserToken:
+    id: int
+    type: str
+
+
+@dataclass
 class Error:
     reason: Literal["BAD_REQUEST", "CONFLICT", "UNKNOWN", "NOT_FOUND"]
     message: str
@@ -33,3 +39,15 @@ class SuccessLoginEmployee:
     login: str
     message: str
     token: str
+
+
+@dataclass
+class SuccessForgotPassword:
+    cpf: str
+    token: str
+
+
+@dataclass
+class SuccessChangePassword:
+    id: int
+    message: str

@@ -1,26 +1,38 @@
+from __future__ import annotations
+
 import datetime
-from typing import Any, Dict, List
+import secrets
+from typing import Any, List
 
 import bcrypt
-import jwt
+from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
-from app.database import Employee, User
+from app.authorization import encode_token_jwt
+from app.database import Employee, ForgotPassword, User
 from app.dataclass import (
     Error,
+    SuccessChangePassword,
     SuccessCreateEmployee,
     SuccessCreateUser,
+    SuccessForgotPassword,
     SuccessLoginEmployee,
     SuccessLoginUser,
+    UserToken,
 )
-from app.models import EmployeeRegister, LoginUser, UserRegister
-
-KEY_TOKEN = "Apolo@ana@catrofe"
+from app.models import (
+    ChagedPasswordInput,
+    EmployeeRegister,
+    LoginUser,
+    SearchPasswordInput,
+    UserRegister,
+)
 
 
 async def create_user(
-    user: UserRegister, session_maker: sessionmaker
+    user: UserRegister, session_maker: sessionmaker[AsyncSession]
 ) -> SuccessCreateUser | Error:
     if await verify_email_already_exists(user.email, session_maker):
         return Error(reason="CONFLICT", message="EMAIL_ALREADY_EXISTS", status_code=409)
@@ -44,7 +56,7 @@ async def create_user(
 
 
 async def create_employee(
-    user: EmployeeRegister, session_maker: sessionmaker
+    user: EmployeeRegister, session_maker: sessionmaker[AsyncSession]
 ) -> SuccessCreateEmployee | Error:
     if await verify_email_alread_exists_to_employee(user.email, session_maker):
         return Error(reason="CONFLICT", message="EMAIL_ALREADY_EXISTS", status_code=409)
@@ -77,7 +89,7 @@ async def create_employee(
 
 
 async def login_user(
-    request: LoginUser, session_maker: sessionmaker
+    request: LoginUser, session_maker: sessionmaker[AsyncSession]
 ) -> SuccessLoginUser | Error:
     login = request.login
     password = str(request.password)
@@ -101,7 +113,7 @@ async def login_user(
                 if isinstance(password_db, str):
                     password_db = password_db.encode("utf-8")
                     if bcrypt.checkpw(password_input, password_db):
-                        token = await encode_token_jwt(iten.id, iten.email, "user")
+                        token = await encode_token_jwt(iten.id, "user")
                         print(token)
                         return SuccessLoginUser(
                             login=login, message="LOGIN_SUCCESSFUL", token=token
@@ -115,7 +127,7 @@ async def login_user(
 
 
 async def login_employee(
-    request: LoginUser, session_maker: sessionmaker
+    request: LoginUser, session_maker: sessionmaker[AsyncSession]
 ) -> SuccessLoginEmployee | Error:
 
     login = request.login
@@ -140,7 +152,7 @@ async def login_employee(
                 if isinstance(password_db, str):
                     password_db = password_db.encode("utf-8")
                     if bcrypt.checkpw(password_input, password_db):
-                        token = await encode_token_jwt(iten.id, iten.email, "employee")
+                        token = await encode_token_jwt(iten.id, "employee")
                         return SuccessLoginEmployee(
                             login=login, message="LOGIN_SUCCESSFUL", token=token
                         )
@@ -153,27 +165,93 @@ async def login_employee(
         )
 
 
-async def encode_token_jwt(id: int, email: str, type: str) -> str:
-    return jwt.encode(
-        {
-            "id": id,
-            "email": email,
-            "type": type,
-            "exp": datetime.datetime.now() + datetime.timedelta(hours=+2),
-        },
-        KEY_TOKEN,
-        algorithm="HS256",
-    )
+async def forgot_password_verify(
+    request: SearchPasswordInput, session_maker: sessionmaker[AsyncSession]
+) -> SuccessForgotPassword | Error:
+
+    token_email = await create_token_email()
+
+    async with session_maker() as session:
+        user_forgot = await (
+            session.execute(
+                select(User).where(User.email == request.email, User.cpf == request.cpf)
+            )
+        )
+
+    user = user_forgot.scalar()
+
+    if user:
+        forgot_add = ForgotPassword(
+            token=token_email, user=user.id, requisition_date=datetime.datetime.now()
+        )
+
+        async with session_maker() as session:
+            session.add(forgot_add)
+            await session.commit()
+
+        # Envia e-mail para usuario.
+
+        token_jwt = await encode_token_jwt(user.id, "user")
+
+        return SuccessForgotPassword(cpf=user.cpf, token=token_jwt)
+    else:
+        return Error(reason="NOT_FOUND", message="USER_NOT_FOUND", status_code=403)
 
 
-async def decode_token_jwt(token: str) -> Dict[str, Any]:
-    return jwt.decode(
-        token, KEY_TOKEN, leeway=datetime.timedelta(hours=+2), algorithm="HS256"
-    )
+async def change_password(
+    request: ChagedPasswordInput,
+    user_request: UserToken,
+    session_maker: sessionmaker[AsyncSession],
+) -> SuccessChangePassword | Error:
+    try:
+        new_password = request.password
+        new_password = await encrypt_password(new_password)
+
+        async with session_maker() as session:
+            token_valid = await (
+                session.execute(
+                    select(ForgotPassword).where(ForgotPassword.token == request.token)
+                )
+            )
+
+        if token_valid:
+            async with session_maker() as session:
+                await (
+                    session.execute(
+                        update(User)
+                        .where(User.id == user_request.id)
+                        .values(password=new_password)
+                    )
+                )
+
+                await session.execute(
+                    update(ForgotPassword)
+                    .where(ForgotPassword.token == request.token)
+                    .values(utilized=True)
+                )
+
+                await session.commit()
+
+            return SuccessChangePassword(
+                id=user_request.id, message="SUCCESS_CHANGE_PASSWORD"
+            )
+        else:
+            return Error(
+                reason="BAD_REQUEST",
+                message="INVALID_TOKEN_TO_CHANGE_PASSWORD",
+                status_code=404,
+            )
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def create_token_email() -> str:
+    return secrets.token_hex(6)
 
 
 async def verify_email_already_exists(
-    email_user: str, session_maker: sessionmaker
+    email_user: str, session_maker: sessionmaker[AsyncSession]
 ) -> bool:
     async with session_maker() as session:
         user = await session.execute(select(User).where(User.email == email_user))
@@ -181,7 +259,7 @@ async def verify_email_already_exists(
 
 
 async def verify_email_alread_exists_to_employee(
-    email_user: str, session_maker: sessionmaker
+    email_user: str, session_maker: sessionmaker[AsyncSession]
 ) -> bool:
     async with session_maker() as session:
         employee = await session.execute(

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 # from sqlalchemy.ext.declarative import declarative_base
@@ -51,3 +51,12 @@ class Employee(Base):
     password = Column(String, nullable=False)
     manager = Column(Boolean, default=False)
     attendant = Column(Boolean, default=False)
+
+
+class ForgotPassword(Base):
+    __tablename__ = "forgot_password"
+    id = Column(Integer, primary_key=True)
+    token = Column(String, nullable=False)
+    user = Column(Integer, ForeignKey("user.id"), nullable=False)
+    requisition_date = Column(DateTime, nullable=False)
+    utilized = Column(Boolean, default=False)
