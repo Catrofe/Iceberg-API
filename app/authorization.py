@@ -29,6 +29,9 @@ async def decode_token_jwt(authorization: str = Header()) -> UserToken:
     except jwt.exceptions.InvalidSignatureError:
         raise HTTPException(401, "TOKEN_INVALID")
 
+    except jwt.exceptions.ExpiredSignatureError:
+        raise HTTPException(401, "TOKEN_HAS_EXPIRED")
+
 
 async def encode_token_jwt(id: int, type: str) -> str:
     return jwt.encode(

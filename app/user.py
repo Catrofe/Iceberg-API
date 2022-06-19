@@ -15,6 +15,10 @@ from app.database import Employee, ForgotPassword, User
 from app.dataclass import (
     Error,
     SuccesEditUser,
+    SuccesGetEmployee,
+    SuccesGetEmployees,
+    SuccesGetUser,
+    SuccessChangeOccupation,
     SuccessChangePassword,
     SuccessCreateEmployee,
     SuccessCreateUser,
@@ -25,6 +29,7 @@ from app.dataclass import (
 )
 from app.models import (
     ChagedPasswordInput,
+    EditOccupationInput,
     EditUserInput,
     EmployeeRegister,
     LoginUser,
@@ -332,6 +337,152 @@ async def edit_account_employee(
             await session.commit()
 
             return SuccesEditUser(id=user_request.id, message="SUCCESS_UPDATE_ACCOUNT")
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def get_all_employees(
+    session_maker: sessionmaker[AsyncSession],
+) -> SuccesGetEmployees | Error:
+    async with session_maker() as session:
+        employees = await session.execute(select(Employee))
+
+    try:
+        list_employees = []
+
+        for iten in employees:
+            data = {}
+            if iten.manager:
+                data = {"name": iten.name, "occupation": "Manager"}
+            else:
+                data = {"name": iten.name, "occupation": "Attendant"}
+
+            list_employees.append(data)
+
+        return SuccesGetEmployees(data=list_employees)
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def get_employee_logged(
+    user: UserToken, session_maker: sessionmaker[AsyncSession]
+) -> SuccesGetEmployee | Error:
+    try:
+        async with session_maker() as session:
+            account_select = await session.execute(
+                select(Employee).where(Employee.id == user.id)
+            )
+            account = account_select.scalar()
+
+        if account:
+            if account.manager:
+                return SuccesGetEmployee(
+                    name=account.name,
+                    email=account.email,
+                    cpf=account.cpf,
+                    occupation="Manager",
+                )
+            else:
+                return SuccesGetEmployee(
+                    name=account.name,
+                    email=account.email,
+                    cpf=account.cpf,
+                    occupation="Attendant",
+                )
+        else:
+            return Error(
+                reason="NOT_FOUND", message="EMPLOYEE_NOT_FOUND", status_code=404
+            )
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def get_user_logged(
+    user: UserToken, session_maker: sessionmaker[AsyncSession]
+) -> SuccesGetUser | Error:
+    try:
+        async with session_maker() as session:
+            account_select = await session.execute(
+                select(User).where(User.id == user.id)
+            )
+            account = account_select.scalar()
+
+        if account:
+            return SuccesGetUser(
+                name=account.name,
+                email=account.email,
+                cpf=account.cpf,
+                number=account.number,
+            )
+        else:
+            return Error(
+                reason="NOT_FOUND", message="EMPLOYEE_NOT_FOUND", status_code=404
+            )
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def change_occupation(
+    request: EditOccupationInput,
+    user: UserToken,
+    session_maker: sessionmaker[AsyncSession],
+) -> SuccessChangeOccupation | Error:
+    try:
+        if request.manager == request.attendant:
+            return Error(
+                reason="BAD_REQUEST",
+                message="USER_MUST_HAVE_ONLY_ONE_ROLE",
+                status_code=400,
+            )
+
+        async with session_maker() as session:
+            account = await session.execute(
+                select(Employee).where(Employee.id == user.id, Employee.manager)
+            )
+
+        if account:
+            async with session_maker() as session:
+                if request.manager:
+                    await (
+                        session.execute(
+                            update(Employee)
+                            .where(Employee.cpf == request.cpf)
+                            .values(manager=True, attendant=False)
+                        )
+                    )
+
+                    await session.commit()
+
+                    return SuccessChangeOccupation(
+                        cpf=request.cpf,
+                        old_occupation="Attendant",
+                        new_occupation="Manager",
+                    )
+                else:
+                    await (
+                        session.execute(
+                            update(Employee)
+                            .where(Employee.cpf == request.cpf)
+                            .values(manager=False, attendant=True)
+                        )
+                    )
+
+                    await session.commit()
+
+                    return SuccessChangeOccupation(
+                        cpf=request.cpf,
+                        old_occupation="Manager",
+                        new_occupation="Attendant",
+                    )
+
+        else:
+            return Error(
+                reason="BAD_REQUEST", message="UNAUTHORIZED_ACCESS", status_code=404
+            )
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)

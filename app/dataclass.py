@@ -57,3 +57,31 @@ class SuccessChangePassword:
 class SuccesEditUser:
     id: int
     message: str
+
+
+@dataclass
+class SuccesGetEmployees:
+    data: list[dict[str, str]]
+
+
+@dataclass
+class SuccesGetEmployee:
+    name: str
+    email: str
+    cpf: str
+    occupation: str
+
+
+@dataclass
+class SuccesGetUser:
+    name: str
+    email: str
+    cpf: str
+    number: str
+
+
+@dataclass
+class SuccessChangeOccupation:
+    cpf: str
+    old_occupation: str
+    new_occupation: str

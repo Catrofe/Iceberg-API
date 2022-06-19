@@ -13,6 +13,10 @@ from app.database import ASYNC_SESSION, ENGINE, async_main
 from app.dataclass import (
     Error,
     SuccesEditUser,
+    SuccesGetEmployee,
+    SuccesGetEmployees,
+    SuccesGetUser,
+    SuccessChangeOccupation,
     SuccessChangePassword,
     SuccessCreateEmployee,
     SuccessCreateUser,
@@ -24,10 +28,15 @@ from app.dataclass import (
 from app.models import (
     ChagedPasswordInput,
     ChagedPasswordOutput,
+    EditOccupationInput,
+    EditOccupationOutput,
     EditUserInput,
     EditUserOutput,
     EmployeeOutput,
     EmployeeRegister,
+    GetEmployeeLoggedOutput,
+    GetEmployeesOutput,
+    GetUserLoggedOutput,
     LoginEmployeeOutput,
     LoginUser,
     LoginUserOutput,
@@ -37,12 +46,16 @@ from app.models import (
     UserRegister,
 )
 from app.user import (
+    change_occupation,
     change_password,
     create_employee,
     create_user,
     edit_account_employee,
     edit_account_user,
     forgot_password_verify,
+    get_all_employees,
+    get_employee_logged,
+    get_user_logged,
     login_employee,
     login_user,
 )
@@ -149,6 +162,75 @@ async def edit_user(
 
     if isinstance(response, SuccesEditUser):
         return EditUserOutput(id=response.id, message=response.message)
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/employees", status_code=200, response_model=GetEmployeesOutput)
+async def get_employees(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetEmployeesOutput:
+
+    if not user.type == "employee":
+        raise HTTPException(401, "ACCESS_DENIED")
+
+    response = await get_all_employees(context.session_maker)
+
+    if isinstance(response, SuccesGetEmployees):
+        return GetEmployeesOutput(ListEmployees=response.data)
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/employee/logged", status_code=200, response_model=GetEmployeeLoggedOutput)
+async def get_employee(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetEmployeeLoggedOutput:
+    response = await get_employee_logged(user, context.session_maker)
+
+    if isinstance(response, SuccesGetEmployee):
+        return GetEmployeeLoggedOutput(
+            name=response.name,
+            email=response.email,
+            cpf=response.cpf,
+            occupation=response.occupation,
+        )
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/user/logged", status_code=200, response_model=GetUserLoggedOutput)
+async def get_user(user: UserToken = Depends(decode_token_jwt)) -> GetUserLoggedOutput:
+    response = await get_user_logged(user, context.session_maker)
+
+    if isinstance(response, SuccesGetUser):
+        return GetUserLoggedOutput(
+            name=response.name,
+            email=response.email,
+            cpf=response.cpf,
+            number=response.number,
+        )
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.put("/edit/occupation", status_code=200, response_model=EditOccupationOutput)
+async def edit_occupation(
+    request: EditOccupationInput, user: UserToken = Depends(decode_token_jwt)
+) -> EditOccupationOutput:
+
+    response = await change_occupation(request, user, context.session_maker)
+
+    if isinstance(response, SuccessChangeOccupation):
+        return EditOccupationOutput(
+            cpf=response.cpf,
+            new_occupation=response.new_occupation,
+            old_occupation=response.old_occupation,
+        )
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)

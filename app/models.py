@@ -89,3 +89,33 @@ class EditUserInput(BaseModel):
 class EditUserOutput(BaseModel):
     id: int
     message: str
+
+
+class GetEmployeesOutput(BaseModel):
+    ListEmployees: list[dict[str, str]]
+
+
+class GetEmployeeLoggedOutput(BaseModel):
+    name: str
+    email: str
+    cpf: str
+    occupation: str
+
+
+class GetUserLoggedOutput(BaseModel):
+    name: str
+    email: str
+    cpf: str
+    number: str
+
+
+class EditOccupationInput(BaseModel):
+    cpf: str
+    manager: Optional[bool]
+    attendant: Optional[bool]
+
+
+class EditOccupationOutput(BaseModel):
+    cpf: str
+    new_occupation: str
+    old_occupation: str
