@@ -51,3 +51,9 @@ class SuccessForgotPassword:
 class SuccessChangePassword:
     id: int
     message: str
+
+
+@dataclass
+class SuccesEditUser:
+    id: int
+    message: str

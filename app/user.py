@@ -14,6 +14,7 @@ from app.authorization import encode_token_jwt
 from app.database import Employee, ForgotPassword, User
 from app.dataclass import (
     Error,
+    SuccesEditUser,
     SuccessChangePassword,
     SuccessCreateEmployee,
     SuccessCreateUser,
@@ -24,6 +25,7 @@ from app.dataclass import (
 )
 from app.models import (
     ChagedPasswordInput,
+    EditUserInput,
     EmployeeRegister,
     LoginUser,
     SearchPasswordInput,
@@ -241,6 +243,95 @@ async def change_password(
                 message="INVALID_TOKEN_TO_CHANGE_PASSWORD",
                 status_code=404,
             )
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def edit_account_user(
+    request: EditUserInput,
+    user_request: UserToken,
+    session_maker: sessionmaker[AsyncSession],
+) -> SuccesEditUser | Error:
+    try:
+        async with session_maker() as session:
+            if request.name:
+                await (
+                    session.execute(
+                        update(User)
+                        .where(User.id == user_request.id)
+                        .values(name=request.name)
+                    )
+                )
+            if request.email:
+                await (
+                    session.execute(
+                        update(User)
+                        .where(User.id == user_request.id)
+                        .values(email=request.email)
+                    )
+                )
+            if request.password:
+                await (
+                    session.execute(
+                        update(User)
+                        .where(User.id == user_request.id)
+                        .values(password=await encrypt_password(request.password))
+                    )
+                )
+            if request.number:
+                await (
+                    session.execute(
+                        update(User)
+                        .where(User.id == user_request.id)
+                        .values(number=request.number)
+                    )
+                )
+
+            await session.commit()
+
+        return SuccesEditUser(id=user_request.id, message="SUCCESS_UPDATE_ACCOUNT")
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def edit_account_employee(
+    request: EditUserInput,
+    user_request: UserToken,
+    session_maker: sessionmaker[AsyncSession],
+) -> SuccesEditUser | Error:
+
+    try:
+        async with session_maker() as session:
+            if request.name:
+                await (
+                    session.execute(
+                        update(Employee)
+                        .where(Employee.id == user_request.id)
+                        .values(name=request.name)
+                    )
+                )
+            if request.email:
+                await (
+                    session.execute(
+                        update(Employee)
+                        .where(Employee.id == user_request.id)
+                        .values(email=request.email)
+                    )
+                )
+            if request.password:
+                await (
+                    session.execute(
+                        update(Employee)
+                        .where(Employee.id == user_request.id)
+                        .values(password=await encrypt_password(request.password))
+                    )
+                )
+
+            await session.commit()
+
+            return SuccesEditUser(id=user_request.id, message="SUCCESS_UPDATE_ACCOUNT")
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)

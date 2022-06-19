@@ -12,6 +12,7 @@ from app.authorization import decode_token_jwt
 from app.database import ASYNC_SESSION, ENGINE, async_main
 from app.dataclass import (
     Error,
+    SuccesEditUser,
     SuccessChangePassword,
     SuccessCreateEmployee,
     SuccessCreateUser,
@@ -23,6 +24,8 @@ from app.dataclass import (
 from app.models import (
     ChagedPasswordInput,
     ChagedPasswordOutput,
+    EditUserInput,
+    EditUserOutput,
     EmployeeOutput,
     EmployeeRegister,
     LoginEmployeeOutput,
@@ -37,6 +40,8 @@ from app.user import (
     change_password,
     create_employee,
     create_user,
+    edit_account_employee,
+    edit_account_user,
     forgot_password_verify,
     login_employee,
     login_user,
@@ -127,6 +132,23 @@ async def change_password_response(
 
     if isinstance(response, SuccessChangePassword):
         return ChagedPasswordOutput(id=response.id, message=response.message)
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.put("/edit/account", status_code=200, response_model=EditUserOutput)
+async def edit_user(
+    request: EditUserInput, user: UserToken = Depends(decode_token_jwt)
+) -> EditUserOutput:
+
+    if user.type == "user":
+        response = await edit_account_user(request, user, context.session_maker)
+    else:
+        response = await edit_account_employee(request, user, context.session_maker)
+
+    if isinstance(response, SuccesEditUser):
+        return EditUserOutput(id=response.id, message=response.message)
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)

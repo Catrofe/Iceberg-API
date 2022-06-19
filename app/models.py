@@ -77,3 +77,15 @@ class ChagedPasswordInput(BaseModel):
 class ChagedPasswordOutput(BaseModel):
     id: int
     message: str
+
+
+class EditUserInput(BaseModel):
+    name: Optional[str]
+    email: Optional[str]
+    number: Optional[str]
+    password: Optional[str]
+
+
+class EditUserOutput(BaseModel):
+    id: int
+    message: str
