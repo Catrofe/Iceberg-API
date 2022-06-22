@@ -26,4 +26,4 @@ jobs:
         pip install poetry
         poetry install
     - name: Run pre-commit
-      run: poetry run pre-commit -a --hook-stage=push
+      run: poetry run pre-commit run -a --hook-stage=push
