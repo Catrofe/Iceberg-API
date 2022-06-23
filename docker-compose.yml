@@ -11,10 +11,3 @@ services:
       - POSTGRES_PASSWORD=root
     ports:
       - 5432:5432
-  # docker-python:
-  #       build:
-  #           context: .
-  #       ports:
-  #       - 8000:5000
-  #       depends_on:
-  #       - DBpostgres
