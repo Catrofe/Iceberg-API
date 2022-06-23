@@ -131,7 +131,7 @@ async def login_user(
                 continue
 
         return Error(
-            reason="BAD_REQUEST", message="LOGIN_OR_PASSWORD_INCORRECT", status_code=400
+            reason="BAD_REQUEST", message="INVALID_CREDENTIALS", status_code=400
         )
 
 
@@ -170,7 +170,7 @@ async def login_employee(
                 continue
 
         return Error(
-            reason="BAD_REQUEST", message="LOGIN_OR_PASSWORD_INCORRECT", status_code=400
+            reason="BAD_REQUEST", message="INVALID_CREDENTIALS", status_code=400
         )
 
 
