@@ -6,25 +6,20 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
-
-# def build_engine(db_url: str) -> Engine:
-#     return create_async_engine(db_url)
-
-
-# def build_session_maker(engine: Engine) -> sessionmaker:
-#     async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
-#     return async_session
-
-
-# async def setup_db(engine: Engine) -> None:
-#     async with engine.begin() as conn:
-#         await conn.run_sync(Base.MetaData.create_all())
-
 ENGINE = create_async_engine(
     "postgresql+asyncpg://root:root@localhost:5432/Iceberg", echo=True
 )
 
 ASYNC_SESSION = sessionmaker(ENGINE, expire_on_commit=False, class_=AsyncSession)
+
+
+async def setup_db() -> None:
+    engine = create_async_engine(
+        "postgresql+asyncpg://root:root@localhost:5432/Iceberg", echo=True
+    )
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
 
 
 async def async_main() -> None:

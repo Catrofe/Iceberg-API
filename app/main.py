@@ -79,7 +79,6 @@ async def startup_event() -> None:
 
 @app.post("/register/user", status_code=201, response_model=UserOutput)
 async def register_user(user: UserRegister) -> UserOutput:
-    print(context)
     response = await create_user(user, context.session_maker)
 
     if isinstance(response, SuccessCreateUser):
