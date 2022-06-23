@@ -68,12 +68,14 @@ async def create_employee(
     if await verify_email_alread_exists_to_employee(user.email, session_maker):
         return Error(reason="CONFLICT", message="EMAIL_ALREADY_EXISTS", status_code=409)
 
-    if user.manager == user.attendant:
+    if user.manager and user.attendant:
         return Error(
             reason="BAD_REQUEST",
             message="USER_MUST_HAVE_ONLY_ONE_ROLE",
             status_code=400,
         )
+    elif not user.manager and user.attendant:
+        user.attendant = True
 
     try:
         employee_add = Employee(
