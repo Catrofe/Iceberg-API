@@ -1,5 +1,6 @@
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy_utils import drop_database
 
 # from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -14,8 +15,13 @@ ASYNC_SESSION = sessionmaker(ENGINE, expire_on_commit=False, class_=AsyncSession
 
 
 async def setup_db() -> None:
+    try:
+        drop_database("sqlite+aiosqlite:///db.db")
+    except Exception:
+        pass
+    
     engine = create_async_engine(
-        "postgresql+asyncpg://root:root@localhost:5432/Iceberg", echo=True
+        "sqlite+aiosqlite:///db.db", echo=True
     )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
