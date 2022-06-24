@@ -174,11 +174,16 @@ async def login_employee(
         )
 
 
+token_email_test = {}
+
+
 async def forgot_password_verify(
     request: SearchPasswordInput, session_maker: sessionmaker[AsyncSession]
 ) -> SuccessForgotPassword | Error:
 
     token_email = await create_token_email()
+    global token_email_test
+    token_email_test = {"token": token_email}
 
     async with session_maker() as session:
         user_forgot = await (
@@ -514,3 +519,7 @@ async def verify_email_alread_exists_to_employee(
 
 async def encrypt_password(raw_password: str) -> str:
     return bcrypt.hashpw(raw_password.encode("utf8"), bcrypt.gensalt(8)).decode()
+
+
+def return_token_tests() -> dict[str, str]:
+    return token_email_test

@@ -20,7 +20,10 @@ async def setup_db() -> None:
 
 
 async def async_main() -> None:
-    async with ENGINE.begin() as conn:
+    engine = create_async_engine(
+        "postgresql+asyncpg://root:root@localhost:5432/Iceberg", echo=True
+    )
+    async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 
