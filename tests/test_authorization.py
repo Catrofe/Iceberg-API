@@ -3,15 +3,14 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
-from app.database import setup_db
-from app.main import app
+from app.main import app, startup_event
 
 client = TestClient(app)
 
 
 @pytest.fixture
 def drop_database():
-    asyncio.run(setup_db())
+    asyncio.run(startup_event(True))
 
 
 def test_create_token_valid_should_success(drop_database):

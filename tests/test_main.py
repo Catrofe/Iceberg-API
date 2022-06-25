@@ -3,8 +3,7 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
-from app.database import setup_db
-from app.main import app
+from app.main import app, startup_event
 from app.user import return_token_tests
 
 client = TestClient(app)
@@ -12,7 +11,7 @@ client = TestClient(app)
 
 @pytest.fixture
 def drop_database():
-    asyncio.run(setup_db())
+    asyncio.run(startup_event(True))
 
 
 def test_create_user_should_success(drop_database):

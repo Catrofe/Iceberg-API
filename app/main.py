@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 
 from app.authorization import decode_token_jwt
 
 # build_engine, build_session_maker, setup_db,
-from app.database import ASYNC_SESSION, ENGINE, async_main
+from app.database import async_main, setup_db
 from app.dataclass import (
     Error,
     SuccesEditUser,
@@ -59,22 +58,30 @@ from app.user import (
     login_employee,
     login_user,
 )
+from settings import Config
 
 app = FastAPI()
 
 
 @dataclass
 class ServerContext:
-    engine: AsyncEngine
-    session_maker: sessionmaker[AsyncSession]
+    session_maker: Any
 
 
-context = ServerContext(engine=ENGINE, session_maker=ASYNC_SESSION)
+context = ServerContext(session_maker=None)
 
 
 @app.on_event("startup")
-async def startup_event() -> None:
-    await async_main()
+async def startup_event(test: bool = False) -> None:
+    if test:
+        config = Config(config={"env": "test"})
+        session = await setup_db(str(config.config.db_url))
+    else:
+        config = Config(config={"env": "dev"})
+        session = await async_main(str(config.config.db_url))
+
+    global context
+    context = ServerContext(session_maker=session)
 
 
 @app.post("/register/user", status_code=201, response_model=UserOutput)
