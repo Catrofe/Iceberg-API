@@ -74,7 +74,7 @@ async def create_employee(
             message="USER_MUST_HAVE_ONLY_ONE_ROLE",
             status_code=400,
         )
-    elif not user.manager and user.attendant:
+    elif not user.manager and not user.attendant:
         user.attendant = True
 
     try:
@@ -353,7 +353,9 @@ async def get_all_employees(
     session_maker: sessionmaker[AsyncSession],
 ) -> SuccesGetEmployees | Error:
     async with session_maker() as session:
-        employees = await session.execute(select(Employee))
+        employees_select = await session.execute(select(Employee))
+
+    employees = employees_select.scalars()
 
     try:
         list_employees = []
@@ -362,7 +364,7 @@ async def get_all_employees(
             data = {}
             if iten.manager:
                 data = {"name": iten.name, "occupation": "Manager"}
-            else:
+            elif iten.attendant:
                 data = {"name": iten.name, "occupation": "Attendant"}
 
             list_employees.append(data)
@@ -447,9 +449,10 @@ async def change_occupation(
             )
 
         async with session_maker() as session:
-            account = await session.execute(
+            account_select = await session.execute(
                 select(Employee).where(Employee.id == user.id, Employee.manager)
             )
+            account = account_select.scalar()
 
         if account:
             async with session_maker() as session:
