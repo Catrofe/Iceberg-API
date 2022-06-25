@@ -27,8 +27,8 @@ class EmployeeRegister(BaseModel):
     email: str = _email_field
     cpf: str = Field(max_length=11, min_length=11)
     password: str = Field(min_length=8, max_length=255)
-    manager: bool
-    attendant: bool
+    manager: Optional[bool]
+    attendant: Optional[bool]
 
 
 class EmployeeOutput(BaseModel):

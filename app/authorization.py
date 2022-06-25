@@ -10,27 +10,22 @@ KEY_TOKEN = "Apolo@ana@catrofe"
 
 async def decode_token_jwt(authorization: str = Header()) -> UserToken:
     try:
-        if jwt.decode(
+        token = jwt.decode(
             authorization,
             KEY_TOKEN,
             leeway=datetime.timedelta(hours=+2),
             algorithms=["HS256"],
-        ):
-            token = jwt.decode(
-                authorization,
-                KEY_TOKEN,
-                leeway=datetime.timedelta(hours=+2),
-                algorithms=["HS256"],
-            )
-            return UserToken(id=token["id"], type=token["type"])
-
-        raise HTTPException(401, "TOKEN_INVALID")
+        )
+        return UserToken(id=token["id"], type=token["type"])
 
     except jwt.exceptions.InvalidSignatureError:
-        raise HTTPException(401, "TOKEN_INVALID")
+        raise HTTPException(401, "INVALID_SIGNATURE")
 
     except jwt.exceptions.ExpiredSignatureError:
         raise HTTPException(401, "TOKEN_HAS_EXPIRED")
+
+    except jwt.exceptions.DecodeError:
+        raise HTTPException(401, "TOKEN_INVALID")
 
 
 async def encode_token_jwt(id: int, type: str) -> str:

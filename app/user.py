@@ -68,12 +68,14 @@ async def create_employee(
     if await verify_email_alread_exists_to_employee(user.email, session_maker):
         return Error(reason="CONFLICT", message="EMAIL_ALREADY_EXISTS", status_code=409)
 
-    if user.manager == user.attendant:
+    if user.manager and user.attendant:
         return Error(
             reason="BAD_REQUEST",
             message="USER_MUST_HAVE_ONLY_ONE_ROLE",
             status_code=400,
         )
+    elif not user.manager and not user.attendant:
+        user.attendant = True
 
     try:
         employee_add = Employee(
@@ -129,7 +131,7 @@ async def login_user(
                 continue
 
         return Error(
-            reason="BAD_REQUEST", message="LOGIN_OR_PASSWORD_INCORRECT", status_code=400
+            reason="BAD_REQUEST", message="INVALID_CREDENTIALS", status_code=400
         )
 
 
@@ -168,8 +170,11 @@ async def login_employee(
                 continue
 
         return Error(
-            reason="BAD_REQUEST", message="LOGIN_OR_PASSWORD_INCORRECT", status_code=400
+            reason="BAD_REQUEST", message="INVALID_CREDENTIALS", status_code=400
         )
+
+
+token_email_test = {}
 
 
 async def forgot_password_verify(
@@ -177,6 +182,8 @@ async def forgot_password_verify(
 ) -> SuccessForgotPassword | Error:
 
     token_email = await create_token_email()
+    global token_email_test
+    token_email_test = {"token": token_email}
 
     async with session_maker() as session:
         user_forgot = await (
@@ -346,7 +353,9 @@ async def get_all_employees(
     session_maker: sessionmaker[AsyncSession],
 ) -> SuccesGetEmployees | Error:
     async with session_maker() as session:
-        employees = await session.execute(select(Employee))
+        employees_select = await session.execute(select(Employee))
+
+    employees = employees_select.scalars()
 
     try:
         list_employees = []
@@ -355,7 +364,7 @@ async def get_all_employees(
             data = {}
             if iten.manager:
                 data = {"name": iten.name, "occupation": "Manager"}
-            else:
+            elif iten.attendant:
                 data = {"name": iten.name, "occupation": "Attendant"}
 
             list_employees.append(data)
@@ -440,9 +449,10 @@ async def change_occupation(
             )
 
         async with session_maker() as session:
-            account = await session.execute(
+            account_select = await session.execute(
                 select(Employee).where(Employee.id == user.id, Employee.manager)
             )
+            account = account_select.scalar()
 
         if account:
             async with session_maker() as session:
@@ -512,3 +522,7 @@ async def verify_email_alread_exists_to_employee(
 
 async def encrypt_password(raw_password: str) -> str:
     return bcrypt.hashpw(raw_password.encode("utf8"), bcrypt.gensalt(8)).decode()
+
+
+def return_token_tests() -> dict[str, str]:
+    return token_email_test
