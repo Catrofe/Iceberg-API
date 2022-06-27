@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -7,6 +7,17 @@ _email_field = Field(
     max_length=255,
     regex=r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+",
 )
+
+
+class UserToken(BaseModel):
+    id: int
+    type: str
+
+
+class Error(BaseModel):
+    reason: Literal["BAD_REQUEST", "CONFLICT", "UNKNOWN", "NOT_FOUND"]
+    message: str
+    status_code: int
 
 
 class UserRegister(BaseModel):
