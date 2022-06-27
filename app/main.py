@@ -29,11 +29,13 @@ from app.models import (
     LoginUserOutput,
     SearchPasswordInput,
     SearchPasswordOutPut,
+    UpdateProductInput,
+    UpdateProductOutput,
     UserOutput,
     UserRegister,
     UserToken,
 )
-from app.product import product_create
+from app.product import product_create, update_product
 from app.user import (
     change_occupation,
     change_password,
@@ -225,6 +227,23 @@ async def create_product(
         raise HTTPException(403, "ACCESS_DENIED")
 
     if isinstance(response, CreateProductOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.put("/update/product/{id}", status_code=200, response_model=UpdateProductOutput)
+async def update_product_input(
+    id: int, request: UpdateProductInput, user: UserToken = Depends(decode_token_jwt)
+) -> UpdateProductOutput:
+
+    if user.type == "employee":
+        response = await update_product(request, id, context.session_maker)
+    else:
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    if isinstance(response, UpdateProductOutput):
         return response
 
     if isinstance(response, Error):

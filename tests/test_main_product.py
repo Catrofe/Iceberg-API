@@ -94,3 +94,152 @@ def test_create_product_should_access_denied(drop_database):
 
     assert response.status_code == 403
     assert response.json() == {"detail": "ACCESS_DENIED"}
+
+
+def test_update_product_name_should_success(drop_database):
+    body = {
+        "email": "email@email.com",
+        "name": "Christian Lopes",
+        "cpf": "17410599090",
+        "password": "12345678",
+    }
+    response = client.post("/register/employee", json=body)
+
+    body = {
+        "login": "17410599090",
+        "password": "12345678",
+    }
+    response = client.post("/login/employee", json=body)
+    token = response.json()["token"]
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+    body = {
+        "name": "Açai 200ml",
+        "description": "Açai 200ml",
+        "image_url": "http://www.google.com",
+        "price": "10.00",
+        "activated": True,
+    }
+    response = client.post("/create/product", json=body, headers=header)
+
+    body = {"id": 1, "name": "Açai 200ml"}
+    response = client.put("/update/product/1", json=body, headers=header)
+
+    assert response.status_code == 200
+    assert response.json() == {"id": 1, "message": "UPDATE_PRODUCT_SUCCESS"}
+
+
+def test_update_product_description_should_success(drop_database):
+    body = {
+        "email": "email@email.com",
+        "name": "Christian Lopes",
+        "cpf": "17410599090",
+        "password": "12345678",
+    }
+    response = client.post("/register/employee", json=body)
+
+    body = {
+        "login": "17410599090",
+        "password": "12345678",
+    }
+    response = client.post("/login/employee", json=body)
+    token = response.json()["token"]
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+    body = {
+        "name": "Açai 200ml",
+        "description": "Açai 200ml",
+        "image_url": "http://www.google.com",
+        "price": "10.00",
+        "activated": True,
+    }
+    response = client.post("/create/product", json=body, headers=header)
+
+    body = {"id": 1, "description": "Açai gelado de 200ml"}
+    response = client.put("/update/product/1", json=body, headers=header)
+
+    assert response.status_code == 200
+    assert response.json() == {"id": 1, "message": "UPDATE_PRODUCT_SUCCESS"}
+
+
+def test_update_product_image_should_success(drop_database):
+    body = {
+        "email": "email@email.com",
+        "name": "Christian Lopes",
+        "cpf": "17410599090",
+        "password": "12345678",
+    }
+    response = client.post("/register/employee", json=body)
+
+    body = {
+        "login": "17410599090",
+        "password": "12345678",
+    }
+    response = client.post("/login/employee", json=body)
+    token = response.json()["token"]
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+    body = {
+        "name": "Açai 200ml",
+        "description": "Açai 200ml",
+        "image_url": "http://www.google.com",
+        "price": "10.00",
+        "activated": True,
+    }
+    response = client.post("/create/product", json=body, headers=header)
+
+    body = {"id": 1, "image_url": "11111"}
+    response = client.put("/update/product/1", json=body, headers=header)
+
+    assert response.status_code == 200
+    assert response.json() == {"id": 1, "message": "UPDATE_PRODUCT_SUCCESS"}
+
+
+def test_update_product_price_should_success(drop_database):
+    body = {
+        "email": "email@email.com",
+        "name": "Christian Lopes",
+        "cpf": "17410599090",
+        "password": "12345678",
+    }
+    response = client.post("/register/employee", json=body)
+
+    body = {
+        "login": "17410599090",
+        "password": "12345678",
+    }
+    response = client.post("/login/employee", json=body)
+    token = response.json()["token"]
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+    body = {
+        "name": "Açai 200ml",
+        "description": "Açai 200ml",
+        "image_url": "http://www.google.com",
+        "price": "10,00",
+    }
+    response = client.post("/create/product", json=body, headers=header)
+
+    body = {"id": 1, "price": "11,99"}
+    response = client.put("/update/product/1", json=body, headers=header)
+
+    print(response.text)
+
+    assert response.status_code == 200
+    assert response.json() == {"id": 1, "message": "UPDATE_PRODUCT_SUCCESS"}

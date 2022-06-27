@@ -143,3 +143,15 @@ class CreateProductInput(BaseModel):
 class CreateProductOutput(BaseModel):
     id: Optional[int]
     message: str
+
+
+class UpdateProductInput(BaseModel):
+    name: Optional[str]
+    description: Optional[str]
+    image_url: Optional[str]
+    price: Optional[str]
+
+
+class UpdateProductOutput(BaseModel):
+    id: Optional[int]
+    message: str
