@@ -9,17 +9,6 @@ from app.authorization import decode_token_jwt
 
 # build_engine, build_session_maker, setup_db,
 from app.database import async_main, setup_db
-from app.dataclass import (
-    Error,
-    SuccesEditUser,
-    SuccesGetEmployee,
-    SuccesGetEmployees,
-    SuccesGetUser,
-    SuccessChangeOccupation,
-    SuccessChangePassword,
-    SuccessForgotPassword,
-    UserToken,
-)
 from app.models import (
     ChagedPasswordInput,
     ChagedPasswordOutput,
@@ -29,6 +18,7 @@ from app.models import (
     EditUserOutput,
     EmployeeOutput,
     EmployeeRegister,
+    Error,
     GetEmployeeLoggedOutput,
     GetEmployeesOutput,
     GetUserLoggedOutput,
@@ -39,6 +29,7 @@ from app.models import (
     SearchPasswordOutPut,
     UserOutput,
     UserRegister,
+    UserToken,
 )
 from app.user import (
     change_occupation,
@@ -128,8 +119,8 @@ async def login_backoffice(request: LoginUser) -> LoginEmployeeOutput:
 async def forgot_password(request: SearchPasswordInput) -> SearchPasswordOutPut:
     response = await forgot_password_verify(request, context.session_maker)
 
-    if isinstance(response, SuccessForgotPassword):
-        return SearchPasswordOutPut(cpf=response.cpf, token=response.token)
+    if isinstance(response, SearchPasswordOutPut):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
@@ -141,8 +132,8 @@ async def change_password_response(
 ) -> ChagedPasswordOutput:
     response = await change_password(request, user, context.session_maker)
 
-    if isinstance(response, SuccessChangePassword):
-        return ChagedPasswordOutput(id=response.id, message=response.message)
+    if isinstance(response, ChagedPasswordOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
@@ -158,8 +149,8 @@ async def edit_user(
     else:
         response = await edit_account_employee(request, user, context.session_maker)
 
-    if isinstance(response, SuccesEditUser):
-        return EditUserOutput(id=response.id, message=response.message)
+    if isinstance(response, EditUserOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
@@ -175,8 +166,8 @@ async def get_employees(
 
     response = await get_all_employees(context.session_maker)
 
-    if isinstance(response, SuccesGetEmployees):
-        return GetEmployeesOutput(ListEmployees=response.data)
+    if isinstance(response, GetEmployeesOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
@@ -188,13 +179,8 @@ async def get_employee(
 ) -> GetEmployeeLoggedOutput:
     response = await get_employee_logged(user, context.session_maker)
 
-    if isinstance(response, SuccesGetEmployee):
-        return GetEmployeeLoggedOutput(
-            name=response.name,
-            email=response.email,
-            cpf=response.cpf,
-            occupation=response.occupation,
-        )
+    if isinstance(response, GetEmployeeLoggedOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
@@ -204,13 +190,8 @@ async def get_employee(
 async def get_user(user: UserToken = Depends(decode_token_jwt)) -> GetUserLoggedOutput:
     response = await get_user_logged(user, context.session_maker)
 
-    if isinstance(response, SuccesGetUser):
-        return GetUserLoggedOutput(
-            name=response.name,
-            email=response.email,
-            cpf=response.cpf,
-            number=response.number,
-        )
+    if isinstance(response, GetUserLoggedOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
@@ -223,12 +204,8 @@ async def edit_occupation(
 
     response = await change_occupation(request, user, context.session_maker)
 
-    if isinstance(response, SuccessChangeOccupation):
-        return EditOccupationOutput(
-            cpf=response.cpf,
-            new_occupation=response.new_occupation,
-            old_occupation=response.old_occupation,
-        )
+    if isinstance(response, EditOccupationOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)

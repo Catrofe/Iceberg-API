@@ -12,29 +12,27 @@ from sqlalchemy.orm import sessionmaker
 
 from app.authorization import encode_token_jwt
 from app.database import Employee, ForgotPassword, User
-from app.dataclass import (
-    Error,
-    SuccesEditUser,
-    SuccesGetEmployee,
-    SuccesGetEmployees,
-    SuccesGetUser,
-    SuccessChangeOccupation,
-    SuccessChangePassword,
-    SuccessForgotPassword,
-    UserToken,
-)
 from app.models import (
     ChagedPasswordInput,
+    ChagedPasswordOutput,
     EditOccupationInput,
+    EditOccupationOutput,
     EditUserInput,
+    EditUserOutput,
     EmployeeOutput,
     EmployeeRegister,
+    Error,
+    GetEmployeeLoggedOutput,
+    GetEmployeesOutput,
+    GetUserLoggedOutput,
     LoginEmployeeOutput,
     LoginUser,
     LoginUserOutput,
     SearchPasswordInput,
+    SearchPasswordOutPut,
     UserOutput,
     UserRegister,
+    UserToken,
 )
 
 
@@ -179,7 +177,7 @@ token_email_test = {}
 
 async def forgot_password_verify(
     request: SearchPasswordInput, session_maker: sessionmaker[AsyncSession]
-) -> SuccessForgotPassword | Error:
+) -> SearchPasswordOutPut | Error:
 
     token_email = await create_token_email()
     global token_email_test
@@ -207,7 +205,7 @@ async def forgot_password_verify(
 
         token_jwt = await encode_token_jwt(user.id, "user")
 
-        return SuccessForgotPassword(cpf=user.cpf, token=token_jwt)
+        return SearchPasswordOutPut(cpf=user.cpf, token=token_jwt)
     else:
         return Error(reason="NOT_FOUND", message="USER_NOT_FOUND", status_code=403)
 
@@ -216,7 +214,7 @@ async def change_password(
     request: ChagedPasswordInput,
     user_request: UserToken,
     session_maker: sessionmaker[AsyncSession],
-) -> SuccessChangePassword | Error:
+) -> ChagedPasswordOutput | Error:
     try:
         new_password = request.password
         new_password = await encrypt_password(new_password)
@@ -246,7 +244,7 @@ async def change_password(
 
                 await session.commit()
 
-            return SuccessChangePassword(
+            return ChagedPasswordOutput(
                 id=user_request.id, message="SUCCESS_CHANGE_PASSWORD"
             )
         else:
@@ -264,7 +262,7 @@ async def edit_account_user(
     request: EditUserInput,
     user_request: UserToken,
     session_maker: sessionmaker[AsyncSession],
-) -> SuccesEditUser | Error:
+) -> EditUserOutput | Error:
     try:
         async with session_maker() as session:
             if request.name:
@@ -302,7 +300,7 @@ async def edit_account_user(
 
             await session.commit()
 
-        return SuccesEditUser(id=user_request.id, message="SUCCESS_UPDATE_ACCOUNT")
+        return EditUserOutput(id=user_request.id, message="SUCCESS_UPDATE_ACCOUNT")
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
@@ -312,7 +310,7 @@ async def edit_account_employee(
     request: EditUserInput,
     user_request: UserToken,
     session_maker: sessionmaker[AsyncSession],
-) -> SuccesEditUser | Error:
+) -> EditUserOutput | Error:
 
     try:
         async with session_maker() as session:
@@ -343,7 +341,7 @@ async def edit_account_employee(
 
             await session.commit()
 
-            return SuccesEditUser(id=user_request.id, message="SUCCESS_UPDATE_ACCOUNT")
+            return EditUserOutput(id=user_request.id, message="SUCCESS_UPDATE_ACCOUNT")
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
@@ -351,7 +349,7 @@ async def edit_account_employee(
 
 async def get_all_employees(
     session_maker: sessionmaker[AsyncSession],
-) -> SuccesGetEmployees | Error:
+) -> GetEmployeesOutput | Error:
     async with session_maker() as session:
         employees_select = await session.execute(select(Employee))
 
@@ -369,7 +367,7 @@ async def get_all_employees(
 
             list_employees.append(data)
 
-        return SuccesGetEmployees(data=list_employees)
+        return GetEmployeesOutput(ListEmployees=list_employees)
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
@@ -377,7 +375,7 @@ async def get_all_employees(
 
 async def get_employee_logged(
     user: UserToken, session_maker: sessionmaker[AsyncSession]
-) -> SuccesGetEmployee | Error:
+) -> GetEmployeeLoggedOutput | Error:
     try:
         async with session_maker() as session:
             account_select = await session.execute(
@@ -387,14 +385,14 @@ async def get_employee_logged(
 
         if account:
             if account.manager:
-                return SuccesGetEmployee(
+                return GetEmployeeLoggedOutput(
                     name=account.name,
                     email=account.email,
                     cpf=account.cpf,
                     occupation="Manager",
                 )
             else:
-                return SuccesGetEmployee(
+                return GetEmployeeLoggedOutput(
                     name=account.name,
                     email=account.email,
                     cpf=account.cpf,
@@ -411,7 +409,7 @@ async def get_employee_logged(
 
 async def get_user_logged(
     user: UserToken, session_maker: sessionmaker[AsyncSession]
-) -> SuccesGetUser | Error:
+) -> GetUserLoggedOutput | Error:
     try:
         async with session_maker() as session:
             account_select = await session.execute(
@@ -420,7 +418,7 @@ async def get_user_logged(
             account = account_select.scalar()
 
         if account:
-            return SuccesGetUser(
+            return GetUserLoggedOutput(
                 name=account.name,
                 email=account.email,
                 cpf=account.cpf,
@@ -439,7 +437,7 @@ async def change_occupation(
     request: EditOccupationInput,
     user: UserToken,
     session_maker: sessionmaker[AsyncSession],
-) -> SuccessChangeOccupation | Error:
+) -> EditOccupationOutput | Error:
     try:
         if request.manager == request.attendant:
             return Error(
@@ -467,7 +465,7 @@ async def change_occupation(
 
                     await session.commit()
 
-                    return SuccessChangeOccupation(
+                    return EditOccupationOutput(
                         cpf=request.cpf,
                         old_occupation="Attendant",
                         new_occupation="Manager",
@@ -483,7 +481,7 @@ async def change_occupation(
 
                     await session.commit()
 
-                    return SuccessChangeOccupation(
+                    return EditOccupationOutput(
                         cpf=request.cpf,
                         old_occupation="Manager",
                         new_occupation="Attendant",

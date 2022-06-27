@@ -3,7 +3,7 @@ import datetime
 import jwt
 from fastapi import Header, HTTPException
 
-from app.dataclass import UserToken
+from app.models import UserToken
 
 KEY_TOKEN = "Apolo@ana@catrofe"
 
