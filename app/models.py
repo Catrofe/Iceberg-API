@@ -119,3 +119,16 @@ class EditOccupationOutput(BaseModel):
     cpf: str
     new_occupation: str
     old_occupation: str
+
+
+class CreateProductInput(BaseModel):
+    name: str
+    description: Optional[str]
+    image_url: Optional[str]
+    price: str | float
+    activate: Optional[bool]
+
+
+class CreateProductOutput(BaseModel):
+    id: Optional[int]
+    message: str

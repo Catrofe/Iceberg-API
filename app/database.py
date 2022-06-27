@@ -1,6 +1,6 @@
 from typing import Any
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -55,3 +55,13 @@ class ForgotPassword(Base):
     user = Column(Integer, ForeignKey("user.id"), nullable=False)
     requisition_date = Column(DateTime, nullable=False)
     utilized = Column(Boolean, default=False)
+
+
+class Product(Base):
+    __tablename__ = "product"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
+    price = Column(Float, nullable=False)
+    activate = Column(Boolean, default=False)

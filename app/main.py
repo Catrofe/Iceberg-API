@@ -27,6 +27,8 @@ from app.dataclass import (
 from app.models import (
     ChagedPasswordInput,
     ChagedPasswordOutput,
+    CreateProductInput,
+    CreateProductOutput,
     EditOccupationInput,
     EditOccupationOutput,
     EditUserInput,
@@ -44,6 +46,7 @@ from app.models import (
     UserOutput,
     UserRegister,
 )
+from app.product import product_create
 from app.user import (
     change_occupation,
     change_password,
@@ -237,6 +240,23 @@ async def edit_occupation(
             new_occupation=response.new_occupation,
             old_occupation=response.old_occupation,
         )
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.post("/create/product", status_code=201, response_model=CreateProductOutput)
+async def create_product(
+    request: CreateProductInput, user: UserToken = Depends(decode_token_jwt)
+) -> CreateProductOutput:
+
+    if user.type == "employee":
+        response = await product_create(request, context.session_maker)
+    else:
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    if isinstance(response, CreateProductOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
