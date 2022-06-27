@@ -134,10 +134,10 @@ class EditOccupationOutput(BaseModel):
 
 class CreateProductInput(BaseModel):
     name: str
-    description: Optional[str]
-    image_url: Optional[str]
-    price: str | float
-    activate: Optional[bool]
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    price: str
+    activate: Optional[bool] = False
 
 
 class CreateProductOutput(BaseModel):
