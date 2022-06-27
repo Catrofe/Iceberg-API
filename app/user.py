@@ -20,27 +20,27 @@ from app.dataclass import (
     SuccesGetUser,
     SuccessChangeOccupation,
     SuccessChangePassword,
-    SuccessCreateEmployee,
-    SuccessCreateUser,
     SuccessForgotPassword,
-    SuccessLoginEmployee,
-    SuccessLoginUser,
     UserToken,
 )
 from app.models import (
     ChagedPasswordInput,
     EditOccupationInput,
     EditUserInput,
+    EmployeeOutput,
     EmployeeRegister,
+    LoginEmployeeOutput,
     LoginUser,
+    LoginUserOutput,
     SearchPasswordInput,
+    UserOutput,
     UserRegister,
 )
 
 
 async def create_user(
     user: UserRegister, session_maker: sessionmaker[AsyncSession]
-) -> SuccessCreateUser | Error:
+) -> UserOutput | Error:
     if await verify_email_already_exists(user.email, session_maker):
         return Error(reason="CONFLICT", message="EMAIL_ALREADY_EXISTS", status_code=409)
 
@@ -56,7 +56,7 @@ async def create_user(
             session.add(user_add)
             await session.commit()
 
-            return SuccessCreateUser(id=user_add.id, email=user_add.email)
+            return UserOutput(id=user_add.id, email=user_add.email)
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
@@ -64,7 +64,7 @@ async def create_user(
 
 async def create_employee(
     user: EmployeeRegister, session_maker: sessionmaker[AsyncSession]
-) -> SuccessCreateEmployee | Error:
+) -> EmployeeOutput | Error:
     if await verify_email_alread_exists_to_employee(user.email, session_maker):
         return Error(reason="CONFLICT", message="EMAIL_ALREADY_EXISTS", status_code=409)
 
@@ -91,7 +91,7 @@ async def create_employee(
             session.add(employee_add)
             await session.commit()
 
-            return SuccessCreateEmployee(id=employee_add.id, email=employee_add.email)
+            return EmployeeOutput(id=employee_add.id, email=employee_add.email)
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
@@ -99,7 +99,7 @@ async def create_employee(
 
 async def login_user(
     request: LoginUser, session_maker: sessionmaker[AsyncSession]
-) -> SuccessLoginUser | Error:
+) -> LoginUserOutput | Error:
     login = request.login
     password = str(request.password)
     password_input = password.encode("utf8")
@@ -124,7 +124,7 @@ async def login_user(
                     if bcrypt.checkpw(password_input, password_db):
                         token = await encode_token_jwt(iten.id, "user")
                         print(token)
-                        return SuccessLoginUser(
+                        return LoginUserOutput(
                             login=login, message="LOGIN_SUCCESSFUL", token=token
                         )
             except Exception:
@@ -137,7 +137,7 @@ async def login_user(
 
 async def login_employee(
     request: LoginUser, session_maker: sessionmaker[AsyncSession]
-) -> SuccessLoginEmployee | Error:
+) -> LoginEmployeeOutput | Error:
 
     login = request.login
     password = str(request.password)
@@ -162,7 +162,7 @@ async def login_employee(
                     password_db = password_db.encode("utf-8")
                     if bcrypt.checkpw(password_input, password_db):
                         token = await encode_token_jwt(iten.id, "employee")
-                        return SuccessLoginEmployee(
+                        return LoginEmployeeOutput(
                             login=login, message="LOGIN_SUCCESSFUL", token=token
                         )
             except Exception as exc:

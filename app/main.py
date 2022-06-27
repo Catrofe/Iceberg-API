@@ -17,11 +17,7 @@ from app.dataclass import (
     SuccesGetUser,
     SuccessChangeOccupation,
     SuccessChangePassword,
-    SuccessCreateEmployee,
-    SuccessCreateUser,
     SuccessForgotPassword,
-    SuccessLoginEmployee,
-    SuccessLoginUser,
     UserToken,
 )
 from app.models import (
@@ -88,8 +84,8 @@ async def startup_event(test: bool = False) -> None:
 async def register_user(user: UserRegister) -> UserOutput:
     response = await create_user(user, context.session_maker)
 
-    if isinstance(response, SuccessCreateUser):
-        return UserOutput(id=response.id, email=response.email)
+    if isinstance(response, UserOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
@@ -99,8 +95,8 @@ async def register_user(user: UserRegister) -> UserOutput:
 async def register_employee(user: EmployeeRegister) -> EmployeeOutput:
     response = await create_employee(user, context.session_maker)
 
-    if isinstance(response, SuccessCreateEmployee):
-        return EmployeeOutput(id=response.id, email=response.email)
+    if isinstance(response, EmployeeOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
@@ -110,10 +106,8 @@ async def register_employee(user: EmployeeRegister) -> EmployeeOutput:
 async def login(request: LoginUser) -> LoginUserOutput:
     response = await login_user(request, context.session_maker)
 
-    if isinstance(response, SuccessLoginUser):
-        return LoginUserOutput(
-            login=response.login, message=response.message, token=response.token
-        )
+    if isinstance(response, LoginUserOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
@@ -123,10 +117,8 @@ async def login(request: LoginUser) -> LoginUserOutput:
 async def login_backoffice(request: LoginUser) -> LoginEmployeeOutput:
     response = await login_employee(request, context.session_maker)
 
-    if isinstance(response, SuccessLoginEmployee):
-        return LoginEmployeeOutput(
-            login=response.login, message=response.message, token=response.token
-        )
+    if isinstance(response, LoginEmployeeOutput):
+        return response
 
     if isinstance(response, Error):
         raise HTTPException(response.status_code, response.message)
