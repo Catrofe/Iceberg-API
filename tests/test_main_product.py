@@ -18,17 +18,19 @@ def register_user():
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "password": "12345678"
+        "number": "21999999999",
+        "password": "12345678",
     }
-    response = client.post("/register/user", json=body)
+    client.post("/register/user", json=body)
 
 
 def login_user() -> str:
     body = {
-        "login": "17410599090",
+        "login": "email@email.com",
         "password": "12345678",
     }
     response = client.post("/login/user", json=body)
+    print("RESPONSE LOGIN USER", response.text)
     return response.json()["token"]
 
 
@@ -37,9 +39,9 @@ def register_employee():
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "password": "12345678"
+        "password": "12345678",
     }
-    response = client.post("/register/employee", json=body)
+    client.post("/register/employee", json=body)
 
 
 def login_employee() -> str:
@@ -61,9 +63,9 @@ def create_product(token):
         "name": "Açai 200ml",
         "description": "Açai 200ml",
         "image_url": "http://www.google.com",
-        "price": "10,00"
+        "price": "10,00",
     }
-    response = client.post("/create/product", json=body, headers=header)
+    client.post("/create/product", json=body, headers=header)
 
 
 def test_create_product_should_success(drop_database):
@@ -285,7 +287,6 @@ def test_update_product_price_should_success(drop_database):
     body = {"id": 1, "price": "11,99"}
     response = client.put("/update/product/1", json=body, headers=header)
 
-
     assert response.status_code == 200
     assert response.json() == {"id": 1, "message": "UPDATE_PRODUCT_SUCCESS"}
 
@@ -305,7 +306,7 @@ def test_delete_product_should_success(drop_database):
     assert response.status_code == 200
     assert response.json() == {"id": 1, "message": "DELETE_PRODUCT_SUCCESS"}
 
-  
+
 def test_delete_product_nonexistent_should_fail(drop_database):
     register_employee()
     token = login_employee()
@@ -316,7 +317,7 @@ def test_delete_product_nonexistent_should_fail(drop_database):
         "Accept": "application/json",
         "Authorization": token,
     }
-    response = client.delete("/delete/product/2", headers=header)
+    response = client.delete("/delete/product/208", headers=header)
 
     assert response.status_code == 404
     assert response.json() == {"detail": "PRODUCT_NOT_FOUND"}
@@ -325,13 +326,14 @@ def test_delete_product_nonexistent_should_fail(drop_database):
 def test_delete_product_without_token_should_fail(drop_database):
     register_user()
     token = login_user()
-    create_product(token)
+    print(token)
 
     header = {
         "Content-Type": "application/json",
         "Accept": "application/json",
+        "Authorization": token,
     }
     response = client.delete("/delete/product/1", headers=header)
 
-    assert response.status_code == 401
+    assert response.status_code == 403
     assert response.json() == {"detail": "ACCESS_DENIED"}

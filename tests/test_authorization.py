@@ -14,7 +14,6 @@ def drop_database():
 
 
 def test_create_token_valid_should_success(drop_database):
-    # criar usuario
     body = {
         "email": "email@email.com",
         "name": "Christian Lopes",
@@ -30,7 +29,7 @@ def test_create_token_valid_should_success(drop_database):
     token = response.json()["token"]
 
     # get user logged
-    response = client.get("/user/logged", headers={"Authorization": token})
+    response = client.get("/account/logged", headers={"Authorization": token})
 
     assert response.status_code == 200
     assert response.json() == {
@@ -60,7 +59,7 @@ wOTl9.sHjnzgmREKKbF26AXZjFFo-VNp2T_o8rS6mKUaZimjw"
 
     print(token)
 
-    response = client.get("/user/logged", headers={"Authorization": token})
+    response = client.get("/account/logged", headers={"Authorization": token})
 
     assert response.status_code == 401
     assert response.json() == {"detail": "TOKEN_HAS_EXPIRED"}
@@ -84,7 +83,7 @@ def test_verify_token_invalid(drop_database):
 sHjnzgmREKKbF26AXZjFFo-VNp2T_o8rS6mKUaZimjw"
 
     # get user logged
-    response = client.get("/user/logged", headers={"Authorization": token})
+    response = client.get("/account/logged", headers={"Authorization": token})
 
     assert response.status_code == 401
     assert response.json() == {"detail": "TOKEN_INVALID"}
@@ -106,7 +105,7 @@ def test_verify_token_invalid_signature(drop_database):
     token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxNmY4Y2NlMjdjNmI1OWRlNzFmM2FkMCIsImlhdC\
 I6MTY1NTkzMTE1MywiZXhwIjoxNjU2NTM1OTUzfQ.xCbYI_aEhEVYagoeuL5peUuU4k2c32sNivkYIJfPoWE"
 
-    response = client.get("/user/logged", headers={"Authorization": token})
+    response = client.get("/account/logged", headers={"Authorization": token})
 
     assert response.status_code == 401
     assert response.json() == {"detail": "INVALID_SIGNATURE"}

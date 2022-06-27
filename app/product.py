@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from sqlalchemy import update
+from sqlalchemy import delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Product
@@ -77,6 +78,30 @@ async def update_product(
                 await session.commit()
 
         return UpdateProductOutput(id=id, message="UPDATE_PRODUCT_SUCCESS")
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def delete_product(
+    id: int, session_maker: sessionmaker[AsyncSession]
+) -> UpdateProductOutput | Error:
+    try:
+        async with session_maker() as session:
+            product_select = await session.execute(
+                select(Product.id).where(Product.id == id)
+            )
+            product = product_select.scalar()
+
+            if not product:
+                return Error(
+                    reason="NOT_FOUND", message="PRODUCT_NOT_FOUND", status_code=404
+                )
+
+            await session.execute(delete(Product).where(Product.id == id))
+            await session.commit()
+
+        return UpdateProductOutput(id=id, message="DELETE_PRODUCT_SUCCESS")
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)

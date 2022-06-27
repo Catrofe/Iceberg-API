@@ -6,8 +6,6 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException
 
 from app.authorization import decode_token_jwt
-
-# build_engine, build_session_maker, setup_db,
 from app.database import async_main, setup_db
 from app.models import (
     ChagedPasswordInput,
@@ -35,7 +33,7 @@ from app.models import (
     UserRegister,
     UserToken,
 )
-from app.product import product_create, update_product
+from app.product import delete_product, product_create, update_product
 from app.user import (
     change_occupation,
     change_password,
@@ -44,9 +42,8 @@ from app.user import (
     edit_account_employee,
     edit_account_user,
     forgot_password_verify,
+    get_account_logged,
     get_all_employees,
-    get_employee_logged,
-    get_user_logged,
     login_employee,
     login_user,
 )
@@ -178,24 +175,19 @@ async def get_employees(
         raise HTTPException(response.status_code, response.message)
 
 
-@app.get("/employee/logged", status_code=200, response_model=GetEmployeeLoggedOutput)
-async def get_employee(
+@app.get(
+    "/account/logged",
+    status_code=200,
+)
+async def get_user(
     user: UserToken = Depends(decode_token_jwt),
-) -> GetEmployeeLoggedOutput:
-    response = await get_employee_logged(user, context.session_maker)
-
-    if isinstance(response, GetEmployeeLoggedOutput):
-        return response
-
-    if isinstance(response, Error):
-        raise HTTPException(response.status_code, response.message)
-
-
-@app.get("/user/logged", status_code=200, response_model=GetUserLoggedOutput)
-async def get_user(user: UserToken = Depends(decode_token_jwt)) -> GetUserLoggedOutput:
-    response = await get_user_logged(user, context.session_maker)
+) -> GetUserLoggedOutput | GetEmployeeLoggedOutput | Error:
+    response = await get_account_logged(user, context.session_maker)
 
     if isinstance(response, GetUserLoggedOutput):
+        return response
+
+    elif isinstance(response, GetEmployeeLoggedOutput):
         return response
 
     if isinstance(response, Error):
@@ -240,6 +232,23 @@ async def update_product_input(
 
     if user.type == "employee":
         response = await update_product(request, id, context.session_maker)
+    else:
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    if isinstance(response, UpdateProductOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.delete("/delete/product/{id}", status_code=200, response_model=UpdateProductOutput)
+async def delete_product_by_id(
+    id: int, user: UserToken = Depends(decode_token_jwt)
+) -> UpdateProductOutput:
+
+    if user.type == "employee":
+        response = await delete_product(id, context.session_maker)
     else:
         raise HTTPException(403, "ACCESS_DENIED")
 
