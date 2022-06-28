@@ -174,3 +174,11 @@ class GetProductIdOutput(BaseModel):
     image_url: str
     price: str
     activated: bool
+
+
+class GetProductsActivesOutput(BaseModel):
+    products: list[dict[str, str]]
+
+
+class GetAllProductsOutput(BaseModel):
+    products: list[dict[str, str]]

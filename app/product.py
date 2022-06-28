@@ -10,7 +10,9 @@ from app.models import (
     CreateProductInput,
     CreateProductOutput,
     Error,
+    GetAllProductsOutput,
     GetProductIdOutput,
+    GetProductsActivesOutput,
     InactivateProductInput,
     InactivateProductOutput,
     UpdateProductInput,
@@ -171,6 +173,62 @@ async def get_product(
             return Error(
                 reason="NOT_FOUND", message="PRODUCT_NOT_FOUND", status_code=404
             )
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def get_products_actives(
+    session_maker: sessionmaker[AsyncSession],
+) -> GetProductsActivesOutput | Error:
+    try:
+        async with session_maker() as session:
+            product_select = await session.execute(
+                select(Product).where(Product.activate)
+            )
+            products = product_select.scalars()
+
+        list_products = []
+        for iten in products:
+            product_json = {
+                "id": iten.id,
+                "name": iten.name,
+                "description": iten.description,
+                "price": str(iten.price).replace(".", ","),
+                "image_url": iten.image_url,
+                "activated": iten.activate,
+            }
+
+            list_products.append(product_json)
+
+        return GetProductsActivesOutput(products=list_products)
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def get_all_products(
+    session_maker: sessionmaker[AsyncSession],
+) -> GetAllProductsOutput | Error:
+    try:
+        async with session_maker() as session:
+            product_select = await session.execute(select(Product).where())
+            products = product_select.scalars()
+
+        list_products = []
+        for iten in products:
+            product_json = {
+                "id": iten.id,
+                "name": iten.name,
+                "description": iten.description,
+                "price": str(iten.price).replace(".", ","),
+                "image_url": iten.image_url,
+                "activated": iten.activate,
+            }
+
+            list_products.append(product_json)
+
+        return GetAllProductsOutput(products=list_products)
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)

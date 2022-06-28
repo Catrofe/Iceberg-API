@@ -19,9 +19,11 @@ from app.models import (
     EmployeeOutput,
     EmployeeRegister,
     Error,
+    GetAllProductsOutput,
     GetEmployeeLoggedOutput,
     GetEmployeesOutput,
     GetProductIdOutput,
+    GetProductsActivesOutput,
     GetUserLoggedOutput,
     InactivateProductInput,
     InactivateProductOutput,
@@ -38,7 +40,9 @@ from app.models import (
 )
 from app.product import (
     delete_product,
+    get_all_products,
     get_product,
+    get_products_actives,
     product_create,
     update_product,
     update_product_status,
@@ -296,6 +300,34 @@ async def get_product_by_id(
     response = await get_product(id, context.session_maker)
 
     if isinstance(response, GetProductIdOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/products/actives", status_code=200, response_model=GetProductsActivesOutput)
+async def get_all_product_actives(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetProductsActivesOutput:
+
+    response = await get_products_actives(context.session_maker)
+
+    if isinstance(response, GetProductsActivesOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/products/all", status_code=200, response_model=GetAllProductsOutput)
+async def get_all_products_createds(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetAllProductsOutput:
+
+    response = await get_all_products(context.session_maker)
+
+    if isinstance(response, GetAllProductsOutput):
         return response
 
     if isinstance(response, Error):

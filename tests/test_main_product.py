@@ -431,3 +431,93 @@ def test_get_product_by_id_should_error(drop_database):
 
     assert response.status_code == 404
     assert response.json() == {"detail": "PRODUCT_NOT_FOUND"}
+
+
+def test_get_products_actives_should_success(drop_database):
+    register_employee()
+    token = login_employee()
+    create_product(token)
+    create_product(token)
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+
+    body = {"id": 1, "status": True}
+    response = client.patch("/inactivate/product", headers=header, json=body)
+
+    response = client.get("/products/actives", headers=header)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "products": [
+            {
+                "id": "1",
+                "name": "Açai 200ml",
+                "description": "Açai 200ml",
+                "price": "10,0",
+                "image_url": "http://www.google.com",
+                "activated": "True",
+            }
+        ]
+    }
+
+
+def test_get_products_actives_should_empty(drop_database):
+    register_employee()
+    token = login_employee()
+    create_product(token)
+    create_product(token)
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+
+    response = client.get("/products/actives", headers=header)
+
+    assert response.status_code == 200
+    assert response.json() == {"products": []}
+
+
+def test_get_products_all_should_success(drop_database):
+    register_employee()
+    token = login_employee()
+    create_product(token)
+    create_product(token)
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+
+    body = {"id": 1, "status": True}
+    response = client.patch("/inactivate/product", headers=header, json=body)
+
+    response = client.get("/products/all", headers=header)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "products": [
+            {
+                "id": "1",
+                "name": "Açai 200ml",
+                "description": "Açai 200ml",
+                "price": "10,0",
+                "image_url": "http://www.google.com",
+                "activated": "True",
+            },
+            {
+                "id": "2",
+                "name": "Açai 200ml",
+                "description": "Açai 200ml",
+                "price": "10,0",
+                "image_url": "http://www.google.com",
+                "activated": "False",
+            },
+        ]
+    }
