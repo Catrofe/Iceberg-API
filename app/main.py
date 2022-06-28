@@ -22,6 +22,8 @@ from app.models import (
     GetEmployeeLoggedOutput,
     GetEmployeesOutput,
     GetUserLoggedOutput,
+    InactivateProductInput,
+    InactivateProductOutput,
     LoginEmployeeOutput,
     LoginUser,
     LoginUserOutput,
@@ -33,7 +35,12 @@ from app.models import (
     UserRegister,
     UserToken,
 )
-from app.product import delete_product, product_create, update_product
+from app.product import (
+    delete_product,
+    product_create,
+    update_product,
+    update_product_status,
+)
 from app.user import (
     change_occupation,
     change_password,
@@ -226,7 +233,7 @@ async def create_product(
 
 
 @app.put("/update/product/{id}", status_code=200, response_model=UpdateProductOutput)
-async def update_product_input(
+async def update_product_by_id(
     id: int, request: UpdateProductInput, user: UserToken = Depends(decode_token_jwt)
 ) -> UpdateProductOutput:
 
@@ -253,6 +260,25 @@ async def delete_product_by_id(
         raise HTTPException(403, "ACCESS_DENIED")
 
     if isinstance(response, UpdateProductOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.patch(
+    "/inactivate/product", status_code=200, response_model=InactivateProductOutput
+)
+async def change_status_product(
+    request: InactivateProductInput, user: UserToken = Depends(decode_token_jwt)
+) -> InactivateProductOutput:
+    print(request)
+    if user.type == "employee":
+        response = await update_product_status(request, context.session_maker)
+    else:
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    if isinstance(response, InactivateProductOutput):
         return response
 
     if isinstance(response, Error):

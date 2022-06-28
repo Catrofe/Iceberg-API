@@ -337,3 +337,54 @@ def test_delete_product_without_token_should_fail(drop_database):
 
     assert response.status_code == 403
     assert response.json() == {"detail": "ACCESS_DENIED"}
+
+
+def test_activate_product_should_success(drop_database):
+    register_employee()
+    token = login_employee()
+    create_product(token)
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+    body = {"id": 1, "status": True}
+    response = client.patch("/inactivate/product", headers=header, json=body)
+
+    assert response.status_code == 200
+    assert response.json() == {"id": 1, "message": "ACTIVATE_PRODUCT_SUCCESS"}
+
+
+def test_inactivate_product_should_success(drop_database):
+    register_employee()
+    token = login_employee()
+    create_product(token)
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+    body = {"id": 1, "status": False}
+    response = client.patch("/inactivate/product", headers=header, json=body)
+
+    assert response.status_code == 200
+    assert response.json() == {"id": 1, "message": "INACTIVATE_PRODUCT_SUCCESS"}
+
+
+def test_activate_product_invalid(drop_database):
+    register_employee()
+    token = login_employee()
+    create_product(token)
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+    body = {"id": 2, "status": False}
+    response = client.patch("/inactivate/product", headers=header, json=body)
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "PRODUCT_NOT_FOUND"}

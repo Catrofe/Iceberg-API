@@ -10,6 +10,8 @@ from app.models import (
     CreateProductInput,
     CreateProductOutput,
     Error,
+    InactivateProductInput,
+    InactivateProductOutput,
     UpdateProductInput,
     UpdateProductOutput,
 )
@@ -102,6 +104,43 @@ async def delete_product(
             await session.commit()
 
         return UpdateProductOutput(id=id, message="DELETE_PRODUCT_SUCCESS")
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def update_product_status(
+    request: InactivateProductInput, session_maker: sessionmaker[AsyncSession]
+) -> InactivateProductOutput | Error:
+    try:
+        async with session_maker() as session:
+            product_select = await session.execute(
+                select(Product).where(Product.id == request.id)
+            )
+            product = product_select.scalar()
+
+        if product:
+            async with session_maker() as session:
+                await session.execute(
+                    update(Product)
+                    .where(Product.id == request.id)
+                    .values(activate=request.status)
+                )
+                await session.commit()
+
+            if request.status:
+                return InactivateProductOutput(
+                    id=request.id, message="ACTIVATE_PRODUCT_SUCCESS"
+                )
+            else:
+                return InactivateProductOutput(
+                    id=request.id, message="INACTIVATE_PRODUCT_SUCCESS"
+                )
+
+        else:
+            return Error(
+                reason="NOT_FOUND", message="PRODUCT_NOT_FOUND", status_code=404
+            )
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)

@@ -155,3 +155,13 @@ class UpdateProductInput(BaseModel):
 class UpdateProductOutput(BaseModel):
     id: Optional[int]
     message: str
+
+
+class InactivateProductOutput(BaseModel):
+    id: Optional[int]
+    message: str
+
+
+class InactivateProductInput(BaseModel):
+    id: int
+    status: bool
