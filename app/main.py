@@ -293,9 +293,6 @@ async def get_product_by_id(
     user: UserToken = Depends(decode_token_jwt),
 ) -> GetProductIdOutput:
 
-    if not user.type == "employee":
-        raise HTTPException(401, "ACCESS_DENIED")
-
     response = await get_product(id, context.session_maker)
 
     if isinstance(response, GetProductIdOutput):
