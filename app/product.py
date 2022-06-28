@@ -10,6 +10,7 @@ from app.models import (
     CreateProductInput,
     CreateProductOutput,
     Error,
+    GetProductIdOutput,
     InactivateProductInput,
     InactivateProductOutput,
     UpdateProductInput,
@@ -136,6 +137,35 @@ async def update_product_status(
                 return InactivateProductOutput(
                     id=request.id, message="INACTIVATE_PRODUCT_SUCCESS"
                 )
+
+        else:
+            return Error(
+                reason="NOT_FOUND", message="PRODUCT_NOT_FOUND", status_code=404
+            )
+
+    except Exception as exc:
+        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+
+
+async def get_product(
+    id: int, session_maker: sessionmaker[AsyncSession]
+) -> GetProductIdOutput | Error:
+    try:
+        async with session_maker() as session:
+            product_select = await session.execute(
+                select(Product).where(Product.id == id)
+            )
+            product = product_select.scalar()
+
+        if product:
+            return GetProductIdOutput(
+                id=product.id,
+                name=product.name,
+                price=str(product.price).replace(".", ","),
+                description=product.description,
+                image_url=product.image_url,
+                activated=product.activate,
+            )
 
         else:
             return Error(

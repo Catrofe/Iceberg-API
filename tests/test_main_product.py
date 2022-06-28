@@ -388,3 +388,46 @@ def test_activate_product_invalid(drop_database):
 
     assert response.status_code == 404
     assert response.json() == {"detail": "PRODUCT_NOT_FOUND"}
+
+
+def test_get_product_by_id_should_success(drop_database):
+    register_employee()
+    token = login_employee()
+    create_product(token)
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+    response = client.get("/product/1", headers=header)
+
+    print(response.text)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 1,
+        "name": "Açai 200ml",
+        "description": "Açai 200ml",
+        "image_url": "http://www.google.com",
+        "price": "10,0",
+        "activated": False,
+    }
+
+
+def test_get_product_by_id_should_error(drop_database):
+    register_employee()
+    token = login_employee()
+    create_product(token)
+
+    header = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": token,
+    }
+    response = client.get("/product/2", headers=header)
+
+    print(response.text)
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "PRODUCT_NOT_FOUND"}

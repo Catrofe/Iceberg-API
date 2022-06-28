@@ -165,3 +165,12 @@ class InactivateProductOutput(BaseModel):
 class InactivateProductInput(BaseModel):
     id: int
     status: bool
+
+
+class GetProductIdOutput(BaseModel):
+    id: int
+    name: str
+    description: str
+    image_url: str
+    price: str
+    activated: bool

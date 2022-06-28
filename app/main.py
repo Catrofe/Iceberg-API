@@ -21,6 +21,7 @@ from app.models import (
     Error,
     GetEmployeeLoggedOutput,
     GetEmployeesOutput,
+    GetProductIdOutput,
     GetUserLoggedOutput,
     InactivateProductInput,
     InactivateProductOutput,
@@ -37,6 +38,7 @@ from app.models import (
 )
 from app.product import (
     delete_product,
+    get_product,
     product_create,
     update_product,
     update_product_status,
@@ -279,6 +281,24 @@ async def change_status_product(
         raise HTTPException(403, "ACCESS_DENIED")
 
     if isinstance(response, InactivateProductOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/product/{id}", status_code=200, response_model=GetProductIdOutput)
+async def get_product_by_id(
+    id: int,
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetProductIdOutput:
+
+    if not user.type == "employee":
+        raise HTTPException(401, "ACCESS_DENIED")
+
+    response = await get_product(id, context.session_maker)
+
+    if isinstance(response, GetProductIdOutput):
         return response
 
     if isinstance(response, Error):
