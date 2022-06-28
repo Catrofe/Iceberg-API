@@ -496,7 +496,7 @@ def test_get_all_employees_should_error_account_user(drop_database):
     assert response.json() == {"detail": "ACCESS_DENIED"}
 
 
-def test_get_employee_loged_should_success(drop_database):
+def test_get_employee_logged_should_success(drop_database):
     body = {
         "email": "email@email.com",
         "name": "Christian Lopes",
@@ -516,7 +516,7 @@ def test_get_employee_loged_should_success(drop_database):
         "Accept": "application/json",
     }
 
-    response = client.get("/employee/logged", headers=header)
+    response = client.get("/account/logged", headers=header)
 
     assert response.status_code == 200
     assert response.json() == {
@@ -537,7 +537,7 @@ def test_get_user_loged_should_success(drop_database):
     }
     response = client.post("/register/user", json=body)
 
-    body = {"login": "email@email.com", "password": "12345678"}
+    body = {"login": "21999999999", "password": "12345678"}
     response = client.post("/login/user", json=body)
     token = response.json()["token"]
 
@@ -547,14 +547,16 @@ def test_get_user_loged_should_success(drop_database):
         "Accept": "application/json",
     }
 
-    response = client.get("/user/logged", headers=header)
+    response = client.get("/account/logged", headers=header)
+
+    print(response.text)
 
     assert response.status_code == 200
     assert response.json() == {
         "name": "Christian Lopes",
         "email": "email@email.com",
-        "number": "21999999999",
         "cpf": "12345678901",
+        "number": "21999999999",
     }
 
 

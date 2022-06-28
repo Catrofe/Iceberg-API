@@ -373,61 +373,48 @@ async def get_all_employees(
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
 
 
-async def get_employee_logged(
+async def get_account_logged(
     user: UserToken, session_maker: sessionmaker[AsyncSession]
-) -> GetEmployeeLoggedOutput | Error:
+) -> GetUserLoggedOutput | GetEmployeeLoggedOutput | Error:
     try:
-        async with session_maker() as session:
-            account_select = await session.execute(
-                select(Employee).where(Employee.id == user.id)
-            )
-            account = account_select.scalar()
+        if user.type == "user":
+            async with session_maker() as session:
+                account_select = await session.execute(
+                    select(User).where(User.id == user.id)
+                )
+                account = account_select.scalar()
 
-        if account:
-            if account.manager:
-                return GetEmployeeLoggedOutput(
+            if account:
+                return GetUserLoggedOutput(
                     name=account.name,
                     email=account.email,
                     cpf=account.cpf,
-                    occupation="Manager",
+                    number=str(account.number),
                 )
-            else:
-                return GetEmployeeLoggedOutput(
-                    name=account.name,
-                    email=account.email,
-                    cpf=account.cpf,
-                    occupation="Attendant",
+        elif user.type == "employee":
+            async with session_maker() as session:
+                account_select = await session.execute(
+                    select(Employee).where(Employee.id == user.id)
                 )
-        else:
-            return Error(
-                reason="NOT_FOUND", message="EMPLOYEE_NOT_FOUND", status_code=404
-            )
+                account = account_select.scalar()
 
-    except Exception as exc:
-        return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
+            if account:
+                if account.manager:
+                    return GetEmployeeLoggedOutput(
+                        name=account.name,
+                        email=account.email,
+                        cpf=account.cpf,
+                        occupation="Manager",
+                    )
+                else:
+                    return GetEmployeeLoggedOutput(
+                        name=account.name,
+                        email=account.email,
+                        cpf=account.cpf,
+                        occupation="Attendant",
+                    )
 
-
-async def get_user_logged(
-    user: UserToken, session_maker: sessionmaker[AsyncSession]
-) -> GetUserLoggedOutput | Error:
-    try:
-        async with session_maker() as session:
-            account_select = await session.execute(
-                select(User).where(User.id == user.id)
-            )
-            account = account_select.scalar()
-
-        if account:
-            return GetUserLoggedOutput(
-                name=account.name,
-                email=account.email,
-                cpf=account.cpf,
-                number=account.number,
-            )
-        else:
-            return Error(
-                reason="NOT_FOUND", message="EMPLOYEE_NOT_FOUND", status_code=404
-            )
+        return Error(reason="NOT_FOUND", message="EMPLOYEE_NOT_FOUND", status_code=404)
 
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)

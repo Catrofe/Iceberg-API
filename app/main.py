@@ -6,12 +6,12 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException
 
 from app.authorization import decode_token_jwt
-
-# build_engine, build_session_maker, setup_db,
 from app.database import async_main, setup_db
 from app.models import (
     ChagedPasswordInput,
     ChagedPasswordOutput,
+    CreateProductInput,
+    CreateProductOutput,
     EditOccupationInput,
     EditOccupationOutput,
     EditUserInput,
@@ -19,17 +19,33 @@ from app.models import (
     EmployeeOutput,
     EmployeeRegister,
     Error,
+    GetAllProductsOutput,
     GetEmployeeLoggedOutput,
     GetEmployeesOutput,
+    GetProductIdOutput,
+    GetProductsActivesOutput,
     GetUserLoggedOutput,
+    InactivateProductInput,
+    InactivateProductOutput,
     LoginEmployeeOutput,
     LoginUser,
     LoginUserOutput,
     SearchPasswordInput,
     SearchPasswordOutPut,
+    UpdateProductInput,
+    UpdateProductOutput,
     UserOutput,
     UserRegister,
     UserToken,
+)
+from app.product import (
+    delete_product,
+    get_all_products,
+    get_product,
+    get_products_actives,
+    product_create,
+    update_product,
+    update_product_status,
 )
 from app.user import (
     change_occupation,
@@ -39,9 +55,8 @@ from app.user import (
     edit_account_employee,
     edit_account_user,
     forgot_password_verify,
+    get_account_logged,
     get_all_employees,
-    get_employee_logged,
-    get_user_logged,
     login_employee,
     login_user,
 )
@@ -173,24 +188,19 @@ async def get_employees(
         raise HTTPException(response.status_code, response.message)
 
 
-@app.get("/employee/logged", status_code=200, response_model=GetEmployeeLoggedOutput)
-async def get_employee(
+@app.get(
+    "/account/logged",
+    status_code=200,
+)
+async def get_user(
     user: UserToken = Depends(decode_token_jwt),
-) -> GetEmployeeLoggedOutput:
-    response = await get_employee_logged(user, context.session_maker)
-
-    if isinstance(response, GetEmployeeLoggedOutput):
-        return response
-
-    if isinstance(response, Error):
-        raise HTTPException(response.status_code, response.message)
-
-
-@app.get("/user/logged", status_code=200, response_model=GetUserLoggedOutput)
-async def get_user(user: UserToken = Depends(decode_token_jwt)) -> GetUserLoggedOutput:
-    response = await get_user_logged(user, context.session_maker)
+) -> GetUserLoggedOutput | GetEmployeeLoggedOutput | Error:
+    response = await get_account_logged(user, context.session_maker)
 
     if isinstance(response, GetUserLoggedOutput):
+        return response
+
+    elif isinstance(response, GetEmployeeLoggedOutput):
         return response
 
     if isinstance(response, Error):
@@ -205,6 +215,119 @@ async def edit_occupation(
     response = await change_occupation(request, user, context.session_maker)
 
     if isinstance(response, EditOccupationOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.post("/create/product", status_code=201, response_model=CreateProductOutput)
+async def create_product(
+    request: CreateProductInput, user: UserToken = Depends(decode_token_jwt)
+) -> CreateProductOutput:
+
+    if user.type == "employee":
+        response = await product_create(request, context.session_maker)
+    else:
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    if isinstance(response, CreateProductOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.put("/update/product/{id}", status_code=200, response_model=UpdateProductOutput)
+async def update_product_by_id(
+    id: int, request: UpdateProductInput, user: UserToken = Depends(decode_token_jwt)
+) -> UpdateProductOutput:
+
+    if user.type == "employee":
+        response = await update_product(request, id, context.session_maker)
+    else:
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    if isinstance(response, UpdateProductOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.delete("/delete/product/{id}", status_code=200, response_model=UpdateProductOutput)
+async def delete_product_by_id(
+    id: int, user: UserToken = Depends(decode_token_jwt)
+) -> UpdateProductOutput:
+
+    if user.type == "employee":
+        response = await delete_product(id, context.session_maker)
+    else:
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    if isinstance(response, UpdateProductOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.patch(
+    "/inactivate/product", status_code=200, response_model=InactivateProductOutput
+)
+async def change_status_product(
+    request: InactivateProductInput, user: UserToken = Depends(decode_token_jwt)
+) -> InactivateProductOutput:
+    print(request)
+    if user.type == "employee":
+        response = await update_product_status(request, context.session_maker)
+    else:
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    if isinstance(response, InactivateProductOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/product/{id}", status_code=200, response_model=GetProductIdOutput)
+async def get_product_by_id(
+    id: int,
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetProductIdOutput:
+
+    response = await get_product(id, context.session_maker)
+
+    if isinstance(response, GetProductIdOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/products/actives", status_code=200, response_model=GetProductsActivesOutput)
+async def get_all_product_actives(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetProductsActivesOutput:
+
+    response = await get_products_actives(context.session_maker)
+
+    if isinstance(response, GetProductsActivesOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/products/all", status_code=200, response_model=GetAllProductsOutput)
+async def get_all_products_createds(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetAllProductsOutput:
+
+    response = await get_all_products(context.session_maker)
+
+    if isinstance(response, GetAllProductsOutput):
         return response
 
     if isinstance(response, Error):

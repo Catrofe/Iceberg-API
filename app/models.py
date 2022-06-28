@@ -130,3 +130,55 @@ class EditOccupationOutput(BaseModel):
     cpf: str
     new_occupation: str
     old_occupation: str
+
+
+class CreateProductInput(BaseModel):
+    name: str
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    price: str
+    activate: Optional[bool] = False
+
+
+class CreateProductOutput(BaseModel):
+    id: Optional[int]
+    message: str
+
+
+class UpdateProductInput(BaseModel):
+    name: Optional[str]
+    description: Optional[str]
+    image_url: Optional[str]
+    price: Optional[str]
+
+
+class UpdateProductOutput(BaseModel):
+    id: Optional[int]
+    message: str
+
+
+class InactivateProductOutput(BaseModel):
+    id: Optional[int]
+    message: str
+
+
+class InactivateProductInput(BaseModel):
+    id: int
+    status: bool
+
+
+class GetProductIdOutput(BaseModel):
+    id: int
+    name: str
+    description: str
+    image_url: str
+    price: str
+    activated: bool
+
+
+class GetProductsActivesOutput(BaseModel):
+    products: list[dict[str, str]]
+
+
+class GetAllProductsOutput(BaseModel):
+    products: list[dict[str, str]]
