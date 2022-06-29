@@ -1,5 +1,7 @@
 import logging
+from typing import cast
 
+from sqlalchemy import select
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, StatementError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -21,20 +23,20 @@ class UserRepository:
             pool_pre_ping=True,
         )
 
-    async def create_user(self, user: UserRegister) -> int:
-        user_to_insert = User(
-            name=user.name,
-            email=user.email,
-            cpf=user.cpf,
-            number=user.number,
-            password=await encrypt_password(user.password),
+    async def create_user(self, new_user: UserRegister) -> int:
+        user = User(
+            name=new_user.name,
+            email=new_user.email,
+            cpf=new_user.cpf,
+            phone=new_user.phone,
+            password=await encrypt_password(new_user.password),
         )
-
         async with AsyncSession(self.engine) as session:
             try:
-                session.add(user_to_insert)
+                session.add(user)
                 await session.commit()
-                return user_to_insert.id
+                await session.execute(select(User).where(User.email == new_user.email))
+                return (await self.get_user_by_email(new_user.email)).id
             except (
                 OperationalError,
                 DataError,
@@ -42,5 +44,10 @@ class UserRepository:
                 IntegrityError,
             ):
                 logger.exception("Insert failed, rollbacking.")
-                session.rollback()
+                await session.rollback()
                 raise
+
+    async def get_user_by_email(self, email: str) -> User:
+        async with AsyncSession(self.engine) as session:
+            query = await session.execute(select(User).where(User.email == email))
+            return cast(User, query.scalars().first())

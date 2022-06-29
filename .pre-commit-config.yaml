@@ -18,7 +18,6 @@ repos:
         language: system
 
       - id: isort
-        args: ["--profile", "black"]
         name: Sort imports with isort
         entry: poetry run isort
         pass_filenames: true
