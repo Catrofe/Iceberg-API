@@ -1,5 +1,5 @@
 import logging
-from typing import cast
+from typing import Optional, cast
 
 from sqlalchemy import select
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError, StatementError
@@ -8,7 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from app.crypto import encrypt_password
 from app.database import User
-from app.models import UserRegister
+from app.models import UserId, UserRegister
 
 logger = logging.getLogger("synchronizer")
 
@@ -23,7 +23,7 @@ class UserRepository:
             pool_pre_ping=True,
         )
 
-    async def create_user(self, new_user: UserRegister) -> int:
+    async def create_user(self, new_user: UserRegister) -> Optional[UserId]:
         user = User(
             name=new_user.name,
             email=new_user.email,
@@ -35,8 +35,11 @@ class UserRepository:
             try:
                 session.add(user)
                 await session.commit()
-                await session.execute(select(User).where(User.email == new_user.email))
-                return (await self.get_user_by_email(new_user.email)).id
+                created_user = await self.get_user_by_email(new_user.email)
+                if created_user is not None:
+                    return created_user.id
+
+                raise RuntimeError("Could not retrieve created user.")
             except (
                 OperationalError,
                 DataError,
@@ -47,7 +50,11 @@ class UserRepository:
                 await session.rollback()
                 raise
 
-    async def get_user_by_email(self, email: str) -> User:
+    async def get_user_by_email(self, email: str) -> Optional[User]:
         async with AsyncSession(self.engine) as session:
             query = await session.execute(select(User).where(User.email == email))
-            return cast(User, query.scalars().first())
+            maybe_user = query.scalars().first()
+            if maybe_user is not None:
+                return cast(User, maybe_user)
+            else:
+                return None

@@ -23,6 +23,9 @@ class UserRegister(BaseModel):
     password: str = Field(min_length=8, max_length=255)
 
 
+UserId = int
+
+
 class UserOutput(BaseModel):
-    id: Optional[int]
+    id: Optional[UserId]
     email: Optional[str]

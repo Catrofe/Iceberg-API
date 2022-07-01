@@ -14,7 +14,7 @@ requests = "^2.28.0"
 bcrypt = "^3.2.2"
 asyncpg = "^0.25.0"
 PyJWT = "^2.4.0"
-SQLAlchemy = {extras = ["asyncio"], version = "^1.4.39"}
+SQLAlchemy = {extras = ["asyncio", "mypy"], version = "^1.4.39"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
@@ -26,7 +26,7 @@ pytest-random-order = "^1.0.4"
 pytest-cov = "^3.0.0"
 mypy = "^0.961"
 aiosqlite = "^0.17.0"
-sqlalchemy-stubs = "^0.4"
+sqlalchemy2-stubs = "^0.0.2-alpha.24"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
