@@ -7,7 +7,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 Base = declarative_base()
 
 
-async def setup_db(url_db: str) -> Any:
+async def setup_db_tests(url_db: str) -> Any:
     engine = create_async_engine(url_db)
     async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with engine.begin() as conn:
@@ -17,7 +17,7 @@ async def setup_db(url_db: str) -> Any:
     return async_session
 
 
-async def async_main(url_db: str) -> Any:
+async def setup_db_main(url_db: str) -> Any:
     engine = create_async_engine(url_db, echo=True)
     async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 

@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException
 
 from app.authorization import decode_token_jwt
-from app.database import async_main, setup_db
+from app.database import setup_db_main, setup_db_tests
 from app.models import (
     ChagedPasswordInput,
     ChagedPasswordOutput,
@@ -47,6 +47,7 @@ from app.product import (
     update_product,
     update_product_status,
 )
+from app.settings import Settings
 from app.user import (
     change_occupation,
     change_password,
@@ -60,7 +61,6 @@ from app.user import (
     login_employee,
     login_user,
 )
-from settings import Config
 
 app = FastAPI()
 
@@ -74,13 +74,11 @@ context = ServerContext(session_maker=None)
 
 
 @app.on_event("startup")
-async def startup_event(test: bool = False) -> None:
+async def startup_event(test: bool = False, settings: Settings = Settings()) -> None:
     if test:
-        config = Config(config={"env": "test"})
-        session = await setup_db(str(config.config.db_url))
+        session = await setup_db_tests(str(settings.db_test))
     else:
-        config = Config(config={"env": "dev"})
-        session = await async_main(str(config.config.db_url))
+        session = await setup_db_main(str(settings.db_url))
 
     global context
     context = ServerContext(session_maker=session)
