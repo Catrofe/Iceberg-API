@@ -18,7 +18,7 @@ def test_create_token_valid_should_success(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
     response = client.post("/register/user", json=body)
@@ -36,7 +36,7 @@ def test_create_token_valid_should_success(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
     }
 
 
@@ -46,7 +46,7 @@ def test_verify_token_expired(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
     response = client.post("/register/user", json=body)
@@ -71,7 +71,7 @@ def test_verify_token_invalid(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
     response = client.post("/register/user", json=body)
@@ -94,7 +94,7 @@ def test_verify_token_invalid_signature(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
     response = client.post("/register/user", json=body)

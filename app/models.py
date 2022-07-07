@@ -24,7 +24,7 @@ class UserRegister(BaseModel):
     email: str = _email_field
     name: str = Field(min_length=3)
     cpf: str = Field(max_length=11, min_length=11)
-    number: str = Field(min_length=10, max_length=15)
+    phone: str = Field(min_length=10, max_length=15)
     password: str = Field(min_length=8, max_length=255)
 
 
@@ -93,7 +93,7 @@ class ChagedPasswordOutput(BaseModel):
 class EditUserInput(BaseModel):
     name: Optional[str]
     email: Optional[str]
-    number: Optional[str]
+    phone: Optional[str]
     password: Optional[str]
 
 
@@ -117,7 +117,7 @@ class GetUserLoggedOutput(BaseModel):
     name: str
     email: str
     cpf: str
-    number: str
+    phone: str
 
 
 class EditOccupationInput(BaseModel):

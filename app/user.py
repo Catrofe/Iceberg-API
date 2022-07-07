@@ -47,7 +47,7 @@ async def create_user(
             name=user.name,
             email=user.email,
             cpf=user.cpf,
-            number=user.number,
+            phone=user.phone,
             password=await encrypt_password(user.password),
         )
         async with session_maker() as session:
@@ -105,14 +105,14 @@ async def login_user(
     async with session_maker() as session:
         user_email = await session.execute(select(User).where(User.email == login))
         user_cpf = await session.execute(select(User).where(User.cpf == login))
-        user_number = await session.execute(select(User).where(User.number == login))
+        user_phone = await session.execute(select(User).where(User.phone == login))
 
-        print(type(user_number))
+        print(type(user_phone))
 
         passwords: List[Any] = []
         passwords.append(user_email.scalar())
         passwords.append(user_cpf.scalar())
-        passwords.append(user_number.scalar())
+        passwords.append(user_phone.scalar())
 
         for iten in passwords:
             try:
@@ -289,12 +289,12 @@ async def edit_account_user(
                         .values(password=await encrypt_password(request.password))
                     )
                 )
-            if request.number:
+            if request.phone:
                 await (
                     session.execute(
                         update(User)
                         .where(User.id == user_request.id)
-                        .values(number=request.number)
+                        .values(phone=request.phone)
                     )
                 )
 
@@ -389,7 +389,7 @@ async def get_account_logged(
                     name=account.name,
                     email=account.email,
                     cpf=account.cpf,
-                    number=str(account.number),
+                    phone=str(account.phone),
                 )
         elif user.type == "employee":
             async with session_maker() as session:
