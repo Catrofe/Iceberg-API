@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -182,3 +183,30 @@ class GetProductsActivesOutput(BaseModel):
 
 class GetAllProductsOutput(BaseModel):
     products: list[dict[str, str]]
+
+
+class ItemsOrders(BaseModel):
+    id: int
+    quantity: int
+
+
+class OrderInput(BaseModel):
+    items: list[ItemsOrders]
+
+
+class OrderOutput(BaseModel):
+    id: Optional[int]
+    message: str
+
+
+class GetOrderOutputToUser(BaseModel):
+    id: Optional[int]
+    status: str
+    price: float
+    requisition_date: date
+    finished: bool
+    products: Optional[list[ItemsOrders]]
+
+
+class GetAllOrdersOutput(BaseModel):
+    orders: list[GetOrderOutputToUser]

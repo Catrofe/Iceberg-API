@@ -19,9 +19,11 @@ from app.models import (
     EmployeeOutput,
     EmployeeRegister,
     Error,
+    GetAllOrdersOutput,
     GetAllProductsOutput,
     GetEmployeeLoggedOutput,
     GetEmployeesOutput,
+    GetOrderOutputToUser,
     GetProductIdOutput,
     GetProductsActivesOutput,
     GetUserLoggedOutput,
@@ -30,6 +32,8 @@ from app.models import (
     LoginEmployeeOutput,
     LoginUser,
     LoginUserOutput,
+    OrderInput,
+    OrderOutput,
     SearchPasswordInput,
     SearchPasswordOutPut,
     UpdateProductInput,
@@ -37,6 +41,13 @@ from app.models import (
     UserOutput,
     UserRegister,
     UserToken,
+)
+from app.order import (
+    cancel_order,
+    order_create,
+    orders_active,
+    return_all_orders,
+    return_order_by_id,
 )
 from app.product import (
     delete_product,
@@ -326,6 +337,71 @@ async def get_all_products_createds(
     response = await get_all_products(context.session_maker)
 
     if isinstance(response, GetAllProductsOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.post("/order", status_code=201, response_model=CreateProductOutput)
+async def order_by_client(
+    request: OrderInput, user: UserToken = Depends(decode_token_jwt)
+) -> OrderOutput:
+    response = await order_create(request, user, context.session_maker)
+
+    if isinstance(response, OrderOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.put("/order/{id}", status_code=201, response_model=OrderOutput)
+async def order_cancel(
+    id: int, user: UserToken = Depends(decode_token_jwt)
+) -> OrderOutput:
+    response = await cancel_order(id, context.session_maker)
+
+    if isinstance(response, OrderOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/order/{id}", status_code=201, response_model=GetOrderOutputToUser)
+async def get_order_by_id(
+    id: int, user: UserToken = Depends(decode_token_jwt)
+) -> GetOrderOutputToUser:
+    response = await return_order_by_id(id, context.session_maker)
+
+    if isinstance(response, GetOrderOutputToUser):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/orders", status_code=201, response_model=GetAllOrdersOutput)
+async def get_order_by_user(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetAllOrdersOutput:
+    response = await return_all_orders(user, context.session_maker)
+
+    if isinstance(response, GetAllOrdersOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/orders/active", status_code=201, response_model=GetAllOrdersOutput)
+async def get_order_active(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetAllOrdersOutput:
+    response = await orders_active(user, context.session_maker)
+
+    if isinstance(response, GetAllOrdersOutput):
         return response
 
     if isinstance(response, Error):

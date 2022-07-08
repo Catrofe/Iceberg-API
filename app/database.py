@@ -1,6 +1,15 @@
 from typing import Any
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+)
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -8,7 +17,7 @@ Base = declarative_base()
 
 
 async def setup_db_tests(url_db: str) -> Any:
-    engine = create_async_engine(url_db)
+    engine = create_async_engine(url_db, echo=False)
     async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -18,7 +27,7 @@ async def setup_db_tests(url_db: str) -> Any:
 
 
 async def setup_db_main(url_db: str) -> Any:
-    engine = create_async_engine(url_db, echo=True)
+    engine = create_async_engine(url_db, echo=False)
     async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
     async with engine.begin() as conn:
@@ -65,3 +74,22 @@ class Product(Base):
     image_url = Column(String, nullable=True)
     price = Column(Float, nullable=False)
     activate = Column(Boolean, default=False)
+
+
+class Order(Base):
+    __tablename__ = "orders"
+    id = Column(Integer, primary_key=True)
+    user = Column(Integer, ForeignKey("user.id"), nullable=False)
+    price = Column(Float, nullable=True)
+    status = Column(String, nullable=False)
+    requisition_date = Column(Date, nullable=False)
+    finished = Column(Boolean, default=False)
+
+
+class ItemOrder(Base):
+    __tablename__ = "items_orders"
+    id = Column(Integer, primary_key=True)
+    order = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    product = Column(Integer, ForeignKey("product.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    price = Column(Float, nullable=False)
