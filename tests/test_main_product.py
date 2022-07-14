@@ -18,7 +18,7 @@ def register_user():
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
     client.post("/register/user", json=body)
@@ -110,7 +110,7 @@ def test_create_product_should_access_denied(drop_database):
     body = {
         "email": "email@email.com",
         "name": "Christian Lopes",
-        "number": "21999999999",
+        "phone": "21999999999",
         "cpf": "17410599090",
         "password": "12345678",
     }

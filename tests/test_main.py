@@ -20,7 +20,7 @@ def test_create_user_should_success(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
 
@@ -36,7 +36,7 @@ def test_create_user__should_conflict(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
 
@@ -70,7 +70,7 @@ def test_create_employee__should_conflict(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
 
@@ -119,7 +119,7 @@ def test_login_user_should_success(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
 
@@ -140,13 +140,13 @@ def test_login_user_should_success(drop_database):
     }
 
 
-def test_login_user_with_number_should_success(drop_database):
+def test_login_user_with_phone_should_success(drop_database):
 
     body = {
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
 
@@ -173,7 +173,7 @@ def test_login_user_with_cpf_should_success(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
 
@@ -200,7 +200,7 @@ def test_login_user_should_bad_request(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
 
@@ -290,7 +290,7 @@ def test_forgot_password_should_success(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
     response = client.post("/register/user", json=body)
@@ -300,7 +300,7 @@ def test_forgot_password_should_success(drop_database):
 
     obj_json = response.json()
 
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json() == {"cpf": "17410599090", "token": obj_json["token"]}
 
 
@@ -309,7 +309,7 @@ def test_forgot_password_should_error(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
     response = client.post("/register/user", json=body)
@@ -326,7 +326,7 @@ def test_change_password_should_success(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
     response = client.post("/register/user", json=body)
@@ -366,7 +366,7 @@ def test_edit_user_account_should_success(drop_database):
         "email": "email@email.com",
         "name": "Christian Lopes",
         "cpf": "17410599090",
-        "number": "21999999999",
+        "phone": "21999999999",
         "password": "12345678",
     }
     response = client.post("/register/user", json=body)
@@ -465,7 +465,7 @@ def test_get_all_employees_should_error_account_user(drop_database):
     body = {
         "email": "email@email.com",
         "name": "Christian Lopes",
-        "number": "21999999999",
+        "phone": "21999999999",
         "cpf": "17410599090",
         "password": "12345678",
     }
@@ -531,7 +531,7 @@ def test_get_user_loged_should_success(drop_database):
     body = {
         "email": "email@email.com",
         "name": "Christian Lopes",
-        "number": "21999999999",
+        "phone": "21999999999",
         "cpf": "12345678901",
         "password": "12345678",
     }
@@ -556,7 +556,7 @@ def test_get_user_loged_should_success(drop_database):
         "name": "Christian Lopes",
         "email": "email@email.com",
         "cpf": "12345678901",
-        "number": "21999999999",
+        "phone": "21999999999",
     }
 
 

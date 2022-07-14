@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException
 
 from app.authorization import decode_token_jwt
-from app.database import async_main, setup_db
+from app.database import setup_db_main, setup_db_tests
 from app.models import (
     ChagedPasswordInput,
     ChagedPasswordOutput,
@@ -19,17 +19,22 @@ from app.models import (
     EmployeeOutput,
     EmployeeRegister,
     Error,
+    GetAllOrdersOutput,
     GetAllProductsOutput,
     GetEmployeeLoggedOutput,
     GetEmployeesOutput,
+    GetOrderOutputToUser,
     GetProductIdOutput,
     GetProductsActivesOutput,
     GetUserLoggedOutput,
     InactivateProductInput,
     InactivateProductOutput,
+    InputOrderShop,
     LoginEmployeeOutput,
     LoginUser,
     LoginUserOutput,
+    OrderInput,
+    OrderOutput,
     SearchPasswordInput,
     SearchPasswordOutPut,
     UpdateProductInput,
@@ -37,6 +42,13 @@ from app.models import (
     UserOutput,
     UserRegister,
     UserToken,
+)
+from app.order import (
+    cancel_order,
+    order_create,
+    orders_active,
+    return_all_orders,
+    return_order_by_id,
 )
 from app.product import (
     delete_product,
@@ -46,6 +58,13 @@ from app.product import (
     product_create,
     update_product,
     update_product_status,
+)
+from app.settings import Settings
+from app.shop_order import (
+    accepted_or_recused_order,
+    cancel_order_accepted,
+    finish_order_accepted,
+    return_open_orders,
 )
 from app.user import (
     change_occupation,
@@ -60,7 +79,6 @@ from app.user import (
     login_employee,
     login_user,
 )
-from settings import Config
 
 app = FastAPI()
 
@@ -74,13 +92,11 @@ context = ServerContext(session_maker=None)
 
 
 @app.on_event("startup")
-async def startup_event(test: bool = False) -> None:
+async def startup_event(test: bool = False, settings: Settings = Settings()) -> None:
     if test:
-        config = Config(config={"env": "test"})
-        session = await setup_db(str(config.config.db_url))
+        session = await setup_db_tests(str(settings.db_test))
     else:
-        config = Config(config={"env": "dev"})
-        session = await async_main(str(config.config.db_url))
+        session = await setup_db_main(str(settings.db_url))
 
     global context
     context = ServerContext(session_maker=session)
@@ -130,7 +146,7 @@ async def login_backoffice(request: LoginUser) -> LoginEmployeeOutput:
         raise HTTPException(response.status_code, response.message)
 
 
-@app.post("/forgot/password", status_code=200, response_model=SearchPasswordOutPut)
+@app.post("/forgot/password", status_code=201, response_model=SearchPasswordOutPut)
 async def forgot_password(request: SearchPasswordInput) -> SearchPasswordOutPut:
     response = await forgot_password_verify(request, context.session_maker)
 
@@ -328,6 +344,142 @@ async def get_all_products_createds(
     response = await get_all_products(context.session_maker)
 
     if isinstance(response, GetAllProductsOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.post("/order", status_code=201, response_model=CreateProductOutput)
+async def order_by_client(
+    request: OrderInput, user: UserToken = Depends(decode_token_jwt)
+) -> OrderOutput:
+    response = await order_create(request, user, context.session_maker)
+
+    if isinstance(response, OrderOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.put("/order/{id}", status_code=200, response_model=OrderOutput)
+async def order_cancel(
+    id: int, user: UserToken = Depends(decode_token_jwt)
+) -> OrderOutput:
+    response = await cancel_order(id, context.session_maker)
+
+    if isinstance(response, OrderOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/order/{id}", status_code=200, response_model=GetOrderOutputToUser)
+async def get_order_by_id(
+    id: int, user: UserToken = Depends(decode_token_jwt)
+) -> GetOrderOutputToUser:
+    response = await return_order_by_id(id, context.session_maker)
+
+    if isinstance(response, GetOrderOutputToUser):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/orders", status_code=200, response_model=GetAllOrdersOutput)
+async def get_order_by_user(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetAllOrdersOutput:
+    response = await return_all_orders(user, context.session_maker)
+
+    if isinstance(response, GetAllOrdersOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/orders/active", status_code=200, response_model=GetAllOrdersOutput)
+async def get_order_active(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetAllOrdersOutput:
+    response = await orders_active(user, context.session_maker)
+
+    if isinstance(response, GetAllOrdersOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/shop_orders/open", status_code=200, response_model=GetAllOrdersOutput)
+async def shop_orders_opens(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetAllOrdersOutput:
+
+    if not user.type == "employee":
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    response = await return_open_orders(context.session_maker)
+
+    if isinstance(response, GetAllOrdersOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.put("/shop_orders", status_code=200, response_model=GetOrderOutputToUser)
+async def accepted_or_recused_order_shop(
+    request: InputOrderShop,
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetOrderOutputToUser:
+
+    if not user.type == "employee":
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    response = await accepted_or_recused_order(request, context.session_maker)
+
+    if isinstance(response, GetOrderOutputToUser):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.put("/shop_orders/{id}", status_code=200, response_model=GetOrderOutputToUser)
+async def cancel_order_shop(
+    id: int,
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetOrderOutputToUser:
+
+    if not user.type == "employee":
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    response = await cancel_order_accepted(id, context.session_maker)
+
+    if isinstance(response, GetOrderOutputToUser):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.patch("/shop_orders/{id}", status_code=200, response_model=GetOrderOutputToUser)
+async def order_finished(
+    id: int,
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetOrderOutputToUser:
+
+    if not user.type == "employee":
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    response = await finish_order_accepted(id, context.session_maker)
+
+    if isinstance(response, GetOrderOutputToUser):
         return response
 
     if isinstance(response, Error):
