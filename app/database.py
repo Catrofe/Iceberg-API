@@ -77,6 +77,15 @@ class Product(Base):
 
 
 class Order(Base):
+    """
+    status ->:
+    WS - waiting store
+    OR - Order refused
+    OK - Order accepted
+    OC - Order canceled
+    OF - Order finished
+    """
+
     __tablename__ = "orders"
     id = Column(Integer, primary_key=True)
     user = Column(Integer, ForeignKey("user.id"), nullable=False)

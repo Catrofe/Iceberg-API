@@ -300,7 +300,7 @@ def test_forgot_password_should_success(drop_database):
 
     obj_json = response.json()
 
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json() == {"cpf": "17410599090", "token": obj_json["token"]}
 
 

@@ -140,8 +140,7 @@ async def return_order_by_id(
 
         list_products = []
         for item in items:
-            item_product = ItemsOrders(id=item.id, quantity=item.quantity)
-            list_products.append(item_product)
+            list_products.append(ItemsOrders(id=item.id, quantity=item.quantity))
 
         return GetOrderOutputToUser(
             id=order.id,

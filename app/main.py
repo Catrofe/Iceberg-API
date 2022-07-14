@@ -29,6 +29,7 @@ from app.models import (
     GetUserLoggedOutput,
     InactivateProductInput,
     InactivateProductOutput,
+    InputOrderShop,
     LoginEmployeeOutput,
     LoginUser,
     LoginUserOutput,
@@ -59,6 +60,12 @@ from app.product import (
     update_product_status,
 )
 from app.settings import Settings
+from app.shop_order import (
+    accepted_or_recused_order,
+    cancel_order_accepted,
+    finish_order_accepted,
+    return_open_orders,
+)
 from app.user import (
     change_occupation,
     change_password,
@@ -139,7 +146,7 @@ async def login_backoffice(request: LoginUser) -> LoginEmployeeOutput:
         raise HTTPException(response.status_code, response.message)
 
 
-@app.post("/forgot/password", status_code=200, response_model=SearchPasswordOutPut)
+@app.post("/forgot/password", status_code=201, response_model=SearchPasswordOutPut)
 async def forgot_password(request: SearchPasswordInput) -> SearchPasswordOutPut:
     response = await forgot_password_verify(request, context.session_maker)
 
@@ -356,7 +363,7 @@ async def order_by_client(
         raise HTTPException(response.status_code, response.message)
 
 
-@app.put("/order/{id}", status_code=201, response_model=OrderOutput)
+@app.put("/order/{id}", status_code=200, response_model=OrderOutput)
 async def order_cancel(
     id: int, user: UserToken = Depends(decode_token_jwt)
 ) -> OrderOutput:
@@ -369,7 +376,7 @@ async def order_cancel(
         raise HTTPException(response.status_code, response.message)
 
 
-@app.get("/order/{id}", status_code=201, response_model=GetOrderOutputToUser)
+@app.get("/order/{id}", status_code=200, response_model=GetOrderOutputToUser)
 async def get_order_by_id(
     id: int, user: UserToken = Depends(decode_token_jwt)
 ) -> GetOrderOutputToUser:
@@ -382,7 +389,7 @@ async def get_order_by_id(
         raise HTTPException(response.status_code, response.message)
 
 
-@app.get("/orders", status_code=201, response_model=GetAllOrdersOutput)
+@app.get("/orders", status_code=200, response_model=GetAllOrdersOutput)
 async def get_order_by_user(
     user: UserToken = Depends(decode_token_jwt),
 ) -> GetAllOrdersOutput:
@@ -395,13 +402,84 @@ async def get_order_by_user(
         raise HTTPException(response.status_code, response.message)
 
 
-@app.get("/orders/active", status_code=201, response_model=GetAllOrdersOutput)
+@app.get("/orders/active", status_code=200, response_model=GetAllOrdersOutput)
 async def get_order_active(
     user: UserToken = Depends(decode_token_jwt),
 ) -> GetAllOrdersOutput:
     response = await orders_active(user, context.session_maker)
 
     if isinstance(response, GetAllOrdersOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.get("/shop_orders/open", status_code=200, response_model=GetAllOrdersOutput)
+async def shop_orders_opens(
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetAllOrdersOutput:
+
+    if not user.type == "employee":
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    response = await return_open_orders(context.session_maker)
+
+    if isinstance(response, GetAllOrdersOutput):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.put("/shop_orders", status_code=200, response_model=GetOrderOutputToUser)
+async def accepted_or_recused_order_shop(
+    request: InputOrderShop,
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetOrderOutputToUser:
+
+    if not user.type == "employee":
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    response = await accepted_or_recused_order(request, context.session_maker)
+
+    if isinstance(response, GetOrderOutputToUser):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.put("/shop_orders/{id}", status_code=200, response_model=GetOrderOutputToUser)
+async def cancel_order_shop(
+    id: int,
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetOrderOutputToUser:
+
+    if not user.type == "employee":
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    response = await cancel_order_accepted(id, context.session_maker)
+
+    if isinstance(response, GetOrderOutputToUser):
+        return response
+
+    if isinstance(response, Error):
+        raise HTTPException(response.status_code, response.message)
+
+
+@app.patch("/shop_orders/{id}", status_code=200, response_model=GetOrderOutputToUser)
+async def order_finished(
+    id: int,
+    user: UserToken = Depends(decode_token_jwt),
+) -> GetOrderOutputToUser:
+
+    if not user.type == "employee":
+        raise HTTPException(403, "ACCESS_DENIED")
+
+    response = await finish_order_accepted(id, context.session_maker)
+
+    if isinstance(response, GetOrderOutputToUser):
         return response
 
     if isinstance(response, Error):

@@ -210,3 +210,8 @@ class GetOrderOutputToUser(BaseModel):
 
 class GetAllOrdersOutput(BaseModel):
     orders: list[GetOrderOutputToUser]
+
+
+class InputOrderShop(BaseModel):
+    id: int
+    accepted: bool
