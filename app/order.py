@@ -138,10 +138,9 @@ async def return_order_by_id(
         if not order:
             return Error(reason="NOT_FOUND", message="ORDER_NOT_FOUND", status_code=404)
 
-        list_products = []
-        for item in items:
-            list_products.append(ItemsOrders(id=item.id, quantity=item.quantity))
-
+        list_products = [
+            ItemsOrders(id=item.id, quantity=item.quantity) for item in items
+        ]
         return GetOrderOutputToUser(
             id=order.id,
             status=order.status,
@@ -184,9 +183,7 @@ async def return_all_orders(
                 items = items_select.scalars()
 
             for iten in items:
-                list_products = []
-                list_products.append(ItemsOrders(id=iten.id, quantity=iten.quantity))
-
+                list_products = [ItemsOrders(id=iten.id, quantity=iten.quantity)]
             list_orders.append(
                 GetOrderOutputToUser(
                     id=order.id,
@@ -225,9 +222,7 @@ async def orders_active(
                 items = items_select.scalars()
 
             for iten in items:
-                list_products = []
-                list_products.append(ItemsOrders(id=iten.id, quantity=iten.quantity))
-
+                list_products = [ItemsOrders(id=iten.id, quantity=iten.quantity)]
             list_orders.append(
                 GetOrderOutputToUser(
                     id=order.id,
