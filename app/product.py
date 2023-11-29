@@ -122,29 +122,28 @@ async def update_product_status(
             )
             product = product_select.scalar()
 
-        if product:
-            async with session_maker() as session:
-                await session.execute(
-                    update(Product)
-                    .where(Product.id == request.id)
-                    .values(activate=request.status)
-                )
-                await session.commit()
-
-            if request.status:
-                return InactivateProductOutput(
-                    id=request.id, message="ACTIVATE_PRODUCT_SUCCESS"
-                )
-            else:
-                return InactivateProductOutput(
-                    id=request.id, message="INACTIVATE_PRODUCT_SUCCESS"
-                )
-
-        else:
+        if not product:
             return Error(
                 reason="NOT_FOUND", message="PRODUCT_NOT_FOUND", status_code=404
             )
 
+        async with session_maker() as session:
+            await session.execute(
+                update(Product)
+                .where(Product.id == request.id)
+                .values(activate=request.status)
+            )
+            await session.commit()
+
+        return (
+            InactivateProductOutput(
+                id=request.id, message="ACTIVATE_PRODUCT_SUCCESS"
+            )
+            if request.status
+            else InactivateProductOutput(
+                id=request.id, message="INACTIVATE_PRODUCT_SUCCESS"
+            )
+        )
     except Exception as exc:
         return Error(reason="UNKNOWN", message=repr(exc), status_code=500)
 

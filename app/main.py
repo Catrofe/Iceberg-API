@@ -192,7 +192,7 @@ async def get_employees(
     user: UserToken = Depends(decode_token_jwt),
 ) -> GetEmployeesOutput:
 
-    if not user.type == "employee":
+    if user.type != "employee":
         raise HTTPException(401, "ACCESS_DENIED")
 
     response = await get_all_employees(context.session_maker)
@@ -213,10 +213,7 @@ async def get_user(
 ) -> GetUserLoggedOutput | GetEmployeeLoggedOutput | Error:
     response = await get_account_logged(user, context.session_maker)
 
-    if isinstance(response, GetUserLoggedOutput):
-        return response
-
-    elif isinstance(response, GetEmployeeLoggedOutput):
+    if isinstance(response, (GetUserLoggedOutput, GetEmployeeLoggedOutput)):
         return response
 
     if isinstance(response, Error):
@@ -420,7 +417,7 @@ async def shop_orders_opens(
     user: UserToken = Depends(decode_token_jwt),
 ) -> GetAllOrdersOutput:
 
-    if not user.type == "employee":
+    if user.type != "employee":
         raise HTTPException(403, "ACCESS_DENIED")
 
     response = await return_open_orders(context.session_maker)
@@ -438,7 +435,7 @@ async def accepted_or_recused_order_shop(
     user: UserToken = Depends(decode_token_jwt),
 ) -> GetOrderOutputToUser:
 
-    if not user.type == "employee":
+    if user.type != "employee":
         raise HTTPException(403, "ACCESS_DENIED")
 
     response = await accepted_or_recused_order(request, context.session_maker)
@@ -456,7 +453,7 @@ async def cancel_order_shop(
     user: UserToken = Depends(decode_token_jwt),
 ) -> GetOrderOutputToUser:
 
-    if not user.type == "employee":
+    if user.type != "employee":
         raise HTTPException(403, "ACCESS_DENIED")
 
     response = await cancel_order_accepted(id, context.session_maker)
@@ -474,7 +471,7 @@ async def order_finished(
     user: UserToken = Depends(decode_token_jwt),
 ) -> GetOrderOutputToUser:
 
-    if not user.type == "employee":
+    if user.type != "employee":
         raise HTTPException(403, "ACCESS_DENIED")
 
     response = await finish_order_accepted(id, context.session_maker)

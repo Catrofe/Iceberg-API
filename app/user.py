@@ -109,8 +109,7 @@ async def login_user(
 
         print(type(user_phone))
 
-        passwords: List[Any] = []
-        passwords.append(user_email.scalar())
+        passwords: List[Any] = [user_email.scalar()]
         passwords.append(user_cpf.scalar())
         passwords.append(user_phone.scalar())
 
@@ -149,8 +148,7 @@ async def login_employee(
             session.execute(select(Employee).where(Employee.cpf == login))
         )
 
-        passwords: List[Any] = []
-        passwords.append(employee_email.scalar())
+        passwords: List[Any] = [employee_email.scalar()]
         passwords.append(employee_cpf.scalar())
 
         for iten in passwords:
@@ -190,9 +188,7 @@ async def forgot_password_verify(
             )
         )
 
-    user = user_forgot.scalar()
-
-    if user:
+    if user := user_forgot.scalar():
         forgot_add = ForgotPassword(
             token=token_email, user=user.id, requisition_date=datetime.datetime.now()
         )
